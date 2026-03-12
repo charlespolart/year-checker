@@ -16,12 +16,13 @@
 
   #customCursor {
     position: fixed;
+    left: 50%;
+    top: 50%;
     width: 36px;
     height: 36px;
     pointer-events: none;
     z-index: 99999;
     transform: translate(-50%, -50%);
-    display: none;
   }
 
   body {
@@ -930,17 +931,17 @@ document.addEventListener('mousemove', e => {
   updateCursor(e.clientX, e.clientY);
 });
 
-document.addEventListener('touchstart', e => {
-  cursorEl.style.display = '';
+document.body.addEventListener('touchstart', e => {
+  cursorEl.style.display = 'block';
   const t = e.touches[0];
   updateCursor(t.clientX, t.clientY);
-}, { passive: true });
+}, { passive: true, capture: true });
 
-document.addEventListener('touchmove', e => {
-  cursorEl.style.display = '';
+document.body.addEventListener('touchmove', e => {
+  cursorEl.style.display = 'block';
   const t = e.touches[0];
   updateCursor(t.clientX, t.clientY);
-}, { passive: true });
+}, { passive: true, capture: true });
 
 </script>
 </body>
