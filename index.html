@@ -955,9 +955,28 @@ resizeDots();
 window.addEventListener('resize', resizeDots);
 
 const cursorEl = document.getElementById('customCursor');
+
+function updateCursor(x, y) {
+  const vv = window.visualViewport;
+  const scale = vv ? vv.scale : 1;
+  cursorEl.style.left = x + 'px';
+  cursorEl.style.top = y + 'px';
+  cursorEl.style.transform = 'translate(-50%, -50%) scale(' + (1 / scale) + ')';
+}
+
 document.addEventListener('mousemove', e => {
-  cursorEl.style.left = e.clientX + 'px';
-  cursorEl.style.top = e.clientY + 'px';
+  cursorEl.style.display = '';
+  updateCursor(e.clientX, e.clientY);
+});
+
+document.addEventListener('touchmove', e => {
+  cursorEl.style.display = '';
+  const t = e.touches[0];
+  updateCursor(t.clientX, t.clientY);
+});
+
+document.addEventListener('touchend', () => {
+  cursorEl.style.display = 'none';
 });
 </script>
 </body>
