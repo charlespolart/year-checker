@@ -319,6 +319,22 @@
     font-size: 0.75rem;
     font-family: 'DotGothic16', monospace;
     color: #8a8478;
+    cursor: grab !important;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+
+  .legend-item:hover {
+    background: rgba(0,0,0,0.04);
+  }
+
+  .legend-item.dragging {
+    opacity: 0.4;
+  }
+
+  .legend-item.drag-over {
+    border-top: 2px solid #a8a0c0;
   }
 
   .legend-dot {
@@ -791,6 +807,8 @@ function renderPicker() {
 }
 
 /* ── Legend ── */
+let dragIdx = null;
+
 function renderLegend() {
   const page = currentPage();
   const container = document.getElementById('legendItems');
@@ -798,8 +816,23 @@ function renderLegend() {
   page.legends.forEach((item, i) => {
     const div = document.createElement('div');
     div.className = 'legend-item';
+    div.draggable = true;
+    div.dataset.index = i;
     div.innerHTML = '<span class="legend-dot" style="background:'+item.color+'"></span>'+item.label+
       ' <span style="cursor:pointer;opacity:0.5;font-size:12px;" onclick="removeLegend('+i+')" title="Supprimer">x</span>';
+
+    div.addEventListener('dragstart', () => { dragIdx = i; div.classList.add('dragging'); });
+    div.addEventListener('dragend', () => { dragIdx = null; div.classList.remove('dragging'); container.querySelectorAll('.legend-item').forEach(el => el.classList.remove('drag-over')); });
+    div.addEventListener('dragover', (e) => { e.preventDefault(); container.querySelectorAll('.legend-item').forEach(el => el.classList.remove('drag-over')); div.classList.add('drag-over'); });
+    div.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (dragIdx === null || dragIdx === i) return;
+      const moved = page.legends.splice(dragIdx, 1)[0];
+      page.legends.splice(i, 0, moved);
+      savePages();
+      renderLegend();
+    });
+
     container.appendChild(div);
   });
 }
