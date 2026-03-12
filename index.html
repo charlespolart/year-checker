@@ -935,31 +935,21 @@ document.addEventListener('mousemove', e => {
   updateCursor(e.pageX, e.pageY);
 });
 
-let touchCX = 0, touchCY = 0, touchRAF = null;
-
-function trackTouch() {
-  cursorEl.style.left = (touchCX + window.scrollX) + 'px';
-  cursorEl.style.top = (touchCY + window.scrollY) + 'px';
-  touchRAF = requestAnimationFrame(trackTouch);
-}
-
 document.body.addEventListener('touchstart', e => {
   cursorEl.style.display = 'block';
   const t = e.touches[0];
-  touchCX = t.clientX;
-  touchCY = t.clientY;
-  if (!touchRAF) trackTouch();
+  updateCursor(t.pageX, t.pageY);
+  // Re-position after scroll settles
+  requestAnimationFrame(() => {
+    if (e.touches[0]) updateCursor(e.touches[0].pageX, e.touches[0].pageY);
+  });
 }, { passive: true, capture: true });
 
 document.body.addEventListener('touchmove', e => {
+  cursorEl.style.display = 'block';
   const t = e.touches[0];
-  touchCX = t.clientX;
-  touchCY = t.clientY;
+  updateCursor(t.pageX, t.pageY);
 }, { passive: true, capture: true });
-
-document.body.addEventListener('touchend', () => {
-  if (touchRAF) { cancelAnimationFrame(touchRAF); touchRAF = null; }
-}, { passive: true });
 
 </script>
 </body>
