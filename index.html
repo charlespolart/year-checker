@@ -13,7 +13,16 @@
     src: local('Silkscreen');
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; cursor: url('cute-capybara-princess-cursor.png'), auto !important; }
+  * { margin: 0; padding: 0; box-sizing: border-box; cursor: none !important; }
+
+  #customCursor {
+    position: fixed;
+    width: 36px;
+    height: 36px;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+  }
 
   body {
     font-family: 'Silkscreen', 'DotGothic16', monospace;
@@ -25,9 +34,31 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 30px 20px 60px;
+    padding: 10px 380px 10px 200px;
     color: #6a6880;
     overflow-x: hidden;
+  }
+
+  /* ── Main layout ── */
+  .main-layout {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .title-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 350px;
+    z-index: 100;
   }
 
   /* ── Screen ── */
@@ -35,10 +66,12 @@
     background: rgba(255,255,252,0.6);
     border: 2px dashed #d0c8b0;
     border-radius: 14px;
-    padding: 20px 24px;
+    padding: 10px 12px;
     width: fit-content;
     max-width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
+    flex: 1;
+    overflow: hidden;
   }
 
   .screen-dark {
@@ -59,7 +92,7 @@
 
   .subtitle {
     font-family: 'DotGothic16', monospace;
-    font-size: 1.1rem;
+    font-size: 2rem;
     color: #b0a890;
     text-align: center;
     margin-bottom: 22px;
@@ -68,7 +101,7 @@
 
   .stars-deco {
     text-align: center;
-    font-size: 1.3rem;
+    font-size: 2rem;
     margin-bottom: 16px;
     color: #c8b8a0;
     letter-spacing: 6px;
@@ -83,7 +116,7 @@
   /* ── Page title (editable) ── */
   .page-title {
     font-family: 'Silkscreen', monospace;
-    font-size: 2.4rem;
+    font-size: 4rem;
     color: #9090b0;
     text-align: center;
     margin-bottom: 4px;
@@ -93,10 +126,11 @@
     border: none;
     border-bottom: 3px dashed transparent;
     outline: none;
-    cursor: url('cute-capybara-princess-pointer.png'), pointer !important;
+    cursor: none !important;
     width: auto;
-    min-width: 100px;
-    max-width: 90%;
+    width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     transition: border-color 0.2s;
   }
 
@@ -106,12 +140,15 @@
 
   /* ── Page tabs ── */
   .page-tabs {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
+    flex-direction: column;
     gap: 6px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 18px;
-    align-items: center;
+    padding: 10px;
+    z-index: 100;
   }
 
   .page-tab {
@@ -119,12 +156,12 @@
     font-size: 0.7rem;
     letter-spacing: 1px;
     padding: 8px 16px;
-    border-radius: 10px 10px 0 0;
+    border-radius: 0 10px 10px 0;
     border: 2px solid #c8c0a8;
-    border-bottom: none;
+    border-left: none;
     background: #ede8d4;
     color: #9890a0;
-    cursor: url('cute-capybara-princess-pointer.png'), pointer !important;
+    cursor: none !important;
     transition: all 0.15s;
     position: relative;
     display: flex;
@@ -134,14 +171,14 @@
 
   .page-tab:hover {
     background: #f5f0e0;
-    transform: translateY(-2px);
+    transform: translateX(-2px);
   }
 
   .page-tab.active {
     background: #faf6e8;
     color: #8080a8;
     border-color: #a8a0c0;
-    box-shadow: 0 2px 0 #faf6e8;
+    box-shadow: 2px 0 0 #faf6e8;
     z-index: 1;
   }
 
@@ -159,18 +196,18 @@
     font-family: 'Silkscreen', monospace;
     font-size: 0.85rem;
     padding: 7px 14px;
-    border-radius: 10px 10px 0 0;
+    border-radius: 0 10px 10px 0;
     border: 2px dashed #c8c0a8;
-    border-bottom: none;
+    border-left: none;
     background: transparent;
     color: #b0a890;
-    cursor: url('cute-capybara-princess-pointer.png'), pointer !important;
+    cursor: none !important;
     transition: all 0.15s;
   }
 
   .page-tab-add:hover {
     background: #ede8d4;
-    transform: translateY(-2px);
+    transform: translateX(-2px);
   }
 
   /* ── Section titles ── */
@@ -180,8 +217,8 @@
     letter-spacing: 3px;
     text-transform: uppercase;
     text-align: center;
-    margin-bottom: 12px;
-    padding-bottom: 6px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
     border-bottom: 2px dashed #c8c0a8;
     color: #a09880;
   }
@@ -189,7 +226,7 @@
   /* ── Main layout: sidebar left + grid right ── */
   .tracker-layout {
     display: flex;
-    gap: 16px;
+    gap: 24px;
     align-items: flex-start;
     width: 100%;
   }
@@ -198,8 +235,10 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    width: 170px;
+    gap: 8px;
+    width: 180px;
+    padding-left: 14px;
+    padding-right: 16px;
   }
 
   .sidebar-section-title {
@@ -216,10 +255,16 @@
 
   /* ── Color Picker (vertical) ── */
   .color-options {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(5, 28px);
     gap: 5px;
     justify-content: center;
+  }
+
+  .eraser-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4px;
   }
 
   .color-btn {
@@ -227,7 +272,7 @@
     height: 28px;
     border-radius: 50%;
     border: 2px solid #c8c0a8;
-    cursor: url('cute-capybara-princess-pointer.png'), pointer !important;
+    cursor: none !important;
     transition: all 0.15s;
   }
 
@@ -312,7 +357,7 @@
     border: 2px solid;
     border-radius: 10px;
     padding: 8px 16px;
-    cursor: url('cute-capybara-princess-pointer.png'), pointer !important;
+    cursor: none !important;
     transition: all 0.15s;
   }
 
@@ -346,13 +391,13 @@
 
   .tracker-table {
     border-collapse: separate;
-    border-spacing: 5px;
+    border-spacing: 4px 2px;
     margin: 0;
   }
 
   .tracker-table th {
     font-family: 'Silkscreen', monospace;
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     color: #9890a0;
     padding: 0 1px 6px;
     text-align: center;
@@ -368,7 +413,7 @@
     text-align: right;
     padding-right: 8px;
     font-family: 'Silkscreen', monospace;
-    font-size: 0.7rem;
+    font-size: 0.55rem;
     color: #a09880;
     white-space: nowrap;
   }
@@ -376,12 +421,12 @@
   .dot-cell { padding: 0; }
 
   .dot {
-    width: 28px;
-    height: 28px;
+    width: var(--dot-size, 18px);
+    height: var(--dot-size, 18px);
     border-radius: 50%;
     background: #efe8d0;
     border: 2px solid #d0c8b0;
-    cursor: url('cute-capybara-princess-pointer.png'), pointer !important;
+    cursor: none !important;
     transition: all 0.15s;
   }
 
@@ -430,23 +475,19 @@
     position: relative;
     background: linear-gradient(135deg, #faf5ea 0%, #f3ecdb 50%, #ede5d0 100%);
     border-radius: 4px 16px 16px 4px;
-    padding: 40px 36px 32px 52px;
+    padding: 12px 14px 10px 34px;
     width: fit-content;
-    max-width: 100%;
+    height: calc(100vh - 20px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     box-shadow:
       /* book depth */
-      -6px 0 0 #e8dcc6,
-      -9px 0 0 #ddd0b8,
-      -11px 0 0 #d4c8ae,
-      /* page edges on left */
-      -12px 1px 0 #c8bca4,
+      -3px 0 0 #e8dcc6,
+      -5px 0 0 #ddd0b8,
       /* soft outer shadow */
-      4px 6px 20px rgba(0,0,0,0.12),
-      -2px 4px 12px rgba(0,0,0,0.06);
+      2px 3px 10px rgba(0,0,0,0.08);
     border: 1px solid #d8cdb5;
   }
 
@@ -486,6 +527,9 @@
 
   /* ── Responsive ── */
   @media (max-width: 800px) {
+    .main-layout { flex-direction: column; }
+    .title-side { max-width: 100%; padding-top: 0; }
+    .page-title { font-size: 2rem; }
     h1 { font-size: 1.3rem; }
     .tracker-layout { flex-direction: column; }
     .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
@@ -501,11 +545,9 @@
 <body>
 
 
-<div class="page-tabs" id="pageTabs"></div>
-<input type="text" class="page-title" id="pageTitle" value="Reading Tracker" spellcheck="false">
-<p class="subtitle">~ 2026 ~</p>
-<div class="stars-deco">&#9734; &#9734; &#9734; &#9734; &#9734;</div>
+<img id="customCursor" src="cursor.gif" alt="">
 
+<div class="main-layout">
 <div class="tama-shell">
   <div class="book-spine"></div>
 
@@ -515,6 +557,7 @@
     <div class="tracker-layout">
       <div class="sidebar">
         <div class="sidebar-section-title">Couleurs</div>
+        <div class="eraser-row" id="eraserRow"></div>
         <div class="color-options" id="colorPicker"></div>
         <div class="sidebar-section-title">Legende</div>
         <div class="legend-items" id="legendItems"></div>
@@ -529,7 +572,22 @@
     </div>
   </div>
 
-  <!-- Stats Screen -->
+
+  <!-- Tamagotchi Buttons -->
+  <div class="tama-buttons">
+    <div class="tama-btn"></div>
+    <div class="tama-btn"></div>
+    <div class="tama-btn"></div>
+  </div>
+
+</div>
+
+<div class="page-tabs" id="pageTabs"></div>
+<div class="title-side">
+  <div class="page-title" id="pageTitle" contenteditable="true" spellcheck="false">Reading Tracker</div>
+  <p class="subtitle">~ 2026 ~</p>
+  <div class="stars-deco">&#9734; &#9734; &#9734; &#9734; &#9734;</div>
+  <!-- Stats -->
   <div class="screen screen-dark">
     <div class="section-title">Stats</div>
     <div class="stats-row">
@@ -547,18 +605,10 @@
       </div>
     </div>
   </div>
-
-  <!-- Tamagotchi Buttons -->
-  <div class="tama-buttons">
-    <div class="tama-btn"></div>
-    <div class="tama-btn"></div>
-    <div class="tama-btn"></div>
+  <div class="actions">
+    <button class="btn btn-reset" onclick="resetAll()">Tout effacer</button>
   </div>
-
 </div>
-
-<div class="actions">
-  <button class="btn btn-reset" onclick="resetAll()">Tout effacer</button>
 </div>
 
 <script>
@@ -568,11 +618,20 @@ const YEAR = 2026;
 const STORE_KEY = 'trackerPages2026';
 
 const PALETTE = [
-  '#fcd5d5','#f8b4b4','#f9c8d9','#f0b8e0',
-  '#dcc8f0','#c8c0f0','#b8d0f8','#b0e0f0',
-  '#b0e8d8','#c0ecc0','#d8f0b0','#f0f0b0',
-  '#f8e8b0','#fad8b8','#f5c8b8','#e8d0c8',
-  '#d8d0d0','#c8c8c8',
+  // Rose
+  '#FFE5EC','#FFC2D1','#FF9EB8','#FF7AA0','#FF5C8A',
+  // Orange
+  '#FFE8D6','#FFD1B0','#FFBA8A','#FFA364','#FF8C42',
+  // Jaune
+  '#FFF9DB','#FFF3BF','#FFEC99','#FFE066','#FFD43B',
+  // Vert
+  '#E6F4EA','#C7E9C0','#A8D8A8','#7BC47F','#4CAF50',
+  // Bleu
+  '#E7F5FF','#D0EBFF','#A5D8FF','#74C0FC','#4DABF7',
+  // Violet
+  '#F3F0FF','#E5DBFF','#D0BFFF','#B197FC','#9775FA',
+  // Gris
+  '#F8F8F8','#DADADA','#B0B0B0','#7F7F7F','#3C3C3C',
 ];
 
 let pages = [];
@@ -690,21 +749,20 @@ function deletePage(id) {
 
 /* ── Title ── */
 function renderTitle() {
-  const input = document.getElementById('pageTitle');
-  input.value = currentPage().title;
+  const el = document.getElementById('pageTitle');
+  el.textContent = currentPage().title;
 }
 
 document.getElementById('pageTitle').addEventListener('input', function() {
-  currentPage().title = this.value;
+  currentPage().title = this.textContent;
   savePages();
   renderTabs();
 });
 
 /* ── Color Picker ── */
 function renderPicker() {
-  const container = document.getElementById('colorPicker');
-  container.innerHTML = '';
-
+  const eraserRow = document.getElementById('eraserRow');
+  eraserRow.innerHTML = '';
   const eraser = document.createElement('button');
   eraser.className = 'color-btn eraser';
   eraser.title = 'Gomme';
@@ -714,7 +772,10 @@ function renderPicker() {
     document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
     eraser.classList.add('active');
   };
-  container.appendChild(eraser);
+  eraserRow.appendChild(eraser);
+
+  const container = document.getElementById('colorPicker');
+  container.innerHTML = '';
 
   PALETTE.forEach(color => {
     const btn = document.createElement('button');
@@ -840,6 +901,31 @@ function resetAll() {
 }
 
 init();
+
+function resizeDots() {
+  const shell = document.querySelector('.tama-shell');
+  const shellStyle = getComputedStyle(shell);
+  const shellPadding = parseFloat(shellStyle.paddingTop) + parseFloat(shellStyle.paddingBottom);
+  const screenEl = document.querySelector('.screen');
+  const screenStyle = getComputedStyle(screenEl);
+  const screenPadding = parseFloat(screenStyle.paddingTop) + parseFloat(screenStyle.paddingBottom);
+  const screenBorder = parseFloat(screenStyle.borderTopWidth) + parseFloat(screenStyle.borderBottomWidth);
+  const sectionTitle = 24;
+  const headerRow = 20;
+  const shellBorder = 2;
+  const available = window.innerHeight - 20 - shellPadding - screenPadding - screenBorder - sectionTitle - headerRow - shellBorder - 8;
+  const spacing = 2;
+  const dotSize = Math.floor((available - 32 * spacing) / 31);
+  document.documentElement.style.setProperty('--dot-size', Math.max(12, dotSize) + 'px');
+}
+resizeDots();
+window.addEventListener('resize', resizeDots);
+
+const cursorEl = document.getElementById('customCursor');
+document.addEventListener('mousemove', e => {
+  cursorEl.style.left = e.clientX + 'px';
+  cursorEl.style.top = e.clientY + 'px';
+});
 </script>
 </body>
 </html>
