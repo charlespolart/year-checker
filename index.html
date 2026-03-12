@@ -858,6 +858,14 @@ document.addEventListener('touchmove', () => { touchMoved = true; }, { passive: 
 
 init();
 
+/* ── Real-time sync via SSE ── */
+const evtSource = new EventSource('/api/events');
+evtSource.onmessage = async () => {
+  await loadPages();
+  renderAll();
+  resizeDots();
+};
+
 /* ── Responsive dot sizing ── */
 function resizeDots() {
   const shell = document.querySelector('.tama-shell');
