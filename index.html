@@ -827,6 +827,7 @@ function renderGrid() {
 }
 
 function clickDot(dot, key) {
+  if (touchMoved) return;
   const page = currentPage();
   if (selectedColor === null) { delete page.data[key]; dot.style.background = '#efe8d0'; dot.classList.remove('filled'); }
   else { page.data[key] = selectedColor; dot.style.background = selectedColor; dot.classList.add('filled'); }
@@ -857,6 +858,11 @@ function resetAll() {
   renderGrid();
   updateStats();
 }
+
+/* ── Prevent accidental dot clicks while scrolling ── */
+let touchMoved = false;
+document.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
+document.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
 
 init();
 
