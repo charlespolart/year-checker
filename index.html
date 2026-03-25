@@ -703,7 +703,8 @@ function deletePage(id) {
 
 /* ── Title ── */
 function renderTitle() {
-  document.getElementById('pageTitle').textContent = currentPage().title;
+  const el = document.getElementById('pageTitle');
+  if (document.activeElement !== el) el.textContent = currentPage().title;
   document.getElementById('bookTitle').textContent = currentPage().title;
 }
 
