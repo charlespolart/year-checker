@@ -25,7 +25,7 @@ cd "$WORKING_DIR" || exit 1
 # ── Pull latest code ──
 echo ""
 echo "=== Pulling latest code ==="
-git pull origin main
+git pull origin master
 
 # ── Stop service ──
 echo ""
