@@ -36,8 +36,9 @@ sudo systemctl stop $SERVICE_NAME 2>/dev/null || true
 echo ""
 echo "=== Building backend ==="
 cd "$BACKEND_DIR"
-npm ci --omit=dev
+npm ci
 npm run build
+npm prune --omit=dev
 
 # ── Database migrations ──
 echo ""
