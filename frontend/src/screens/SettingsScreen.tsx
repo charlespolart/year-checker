@@ -1,0 +1,206 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { COLORS, FONTS } from '../lib/theme';
+
+interface Props {
+  onBack: () => void;
+}
+
+export default function SettingsScreen({ onBack }: Props) {
+  const { logout } = useAuth();
+  const { lang, setLang, t } = useLanguage();
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (confirm(t('settings.logoutConfirm'))) logout();
+    } else {
+      Alert.alert(t('settings.logout'), t('settings.logoutConfirm'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.yes'), onPress: logout },
+      ]);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+          <Text style={styles.backText}>← {t('settings.back')}</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>{t('settings.title')}</Text>
+        <View style={{ width: 80 }} />
+      </View>
+
+      <View style={styles.content}>
+        {/* Language */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+          <View style={styles.langGrid}>
+            <View style={styles.optionRow}>
+              <TouchableOpacity
+                style={[styles.langBtn, lang === 'fr' && styles.langBtnActive]}
+                onPress={() => setLang('fr')}
+              >
+                <Text style={[styles.langBtnText, lang === 'fr' && styles.langBtnTextActive]}>
+                  {t('settings.french')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langBtn, lang === 'en' && styles.langBtnActive]}
+                onPress={() => setLang('en')}
+              >
+                <Text style={[styles.langBtnText, lang === 'en' && styles.langBtnTextActive]}>
+                  {t('settings.english')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.optionRow}>
+              <TouchableOpacity
+                style={[styles.langBtn, lang === 'zh-CN' && styles.langBtnActive]}
+                onPress={() => setLang('zh-CN')}
+              >
+                <Text style={[styles.langBtnText, lang === 'zh-CN' && styles.langBtnTextActive]}>
+                  {t('settings.chineseSimplified')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langBtn, lang === 'zh-TW' && styles.langBtnActive]}
+                onPress={() => setLang('zh-TW')}
+              >
+                <Text style={[styles.langBtnText, lang === 'zh-TW' && styles.langBtnTextActive]}>
+                  {t('settings.chineseTraditional')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Theme - coming soon */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.theme')}</Text>
+          <Text style={styles.comingSoon}>{t('settings.comingSoon')}</Text>
+        </View>
+
+        {/* Subscription - coming soon */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.subscription')}</Text>
+          <Text style={styles.comingSoon}>{t('settings.comingSoon')}</Text>
+        </View>
+
+        {/* Account */}
+        <View style={[styles.section, { marginTop: 'auto' as any }]}>
+          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  backBtn: {
+    width: 80,
+  },
+  backText: {
+    fontFamily: FONTS.pixel,
+    fontSize: 11,
+    color: COLORS.accent,
+    letterSpacing: 1,
+  },
+  title: {
+    fontFamily: FONTS.pixel,
+    fontSize: 18,
+    color: COLORS.title,
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+    gap: 24,
+  },
+  section: {
+    gap: 10,
+  },
+  sectionTitle: {
+    fontFamily: FONTS.pixel,
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    paddingBottom: 6,
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.sectionBorder,
+    borderStyle: 'dashed',
+    color: COLORS.textWarm,
+  },
+  langGrid: {
+    gap: 10,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  langBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: COLORS.tabBorder,
+    backgroundColor: COLORS.tab,
+    alignItems: 'center',
+  },
+  langBtnActive: {
+    borderColor: COLORS.tabActiveBorder,
+    backgroundColor: COLORS.tabActive,
+  },
+  langBtnText: {
+    fontFamily: FONTS.dot,
+    fontSize: 14,
+    color: COLORS.textMuted,
+  },
+  langBtnTextActive: {
+    color: COLORS.accent,
+    fontWeight: '600',
+  },
+  comingSoon: {
+    fontFamily: FONTS.dot,
+    fontSize: 13,
+    color: COLORS.textMuted,
+    fontStyle: 'italic',
+  },
+  logoutBtn: {
+    backgroundColor: COLORS.btnReset,
+    borderWidth: 2,
+    borderColor: COLORS.btnResetBorder,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  logoutText: {
+    fontFamily: FONTS.pixel,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: COLORS.btnResetText,
+    textTransform: 'uppercase',
+  },
+});
