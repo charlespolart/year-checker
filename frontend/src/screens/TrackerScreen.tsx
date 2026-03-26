@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePages } from '../hooks/usePages';
 import { useCells } from '../hooks/useCells';
 import { useLegends } from '../hooks/useLegends';
@@ -27,7 +27,10 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const [selectedColor, setSelectedColor] = useState<string | null>(PALETTE[0]);
   const [editingTitle, setEditingTitle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { width, height } = useWindowDimensions();
+  const { width, height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'web' ? 20 : 0);
+  const height = windowHeight - bottomInset;
 
   // Collapsing header via diffClamp
   const TAB_H = 50;
@@ -108,8 +111,9 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   // Dynamic dot sizing (matching original resizeDots logic)
   const spacingH = 3;
   const spacingV = 2;
-  const SIDEBAR_W = hasSidebarRow ? 160 : 0;
-  const SIDEBAR_GAP = hasSidebarRow ? 16 : 0;
+  const isTablet = !isMobile && !isWide;
+  const SIDEBAR_W = hasSidebarRow ? (isTablet ? 130 : 160) : 0;
+  const SIDEBAR_GAP = hasSidebarRow ? 12 : 0;
   const LABEL_W = 24;
 
   // Vertical: shell padding(8+6) + screen padding+border(8+2)*2 + section title(~30) + header row(~20)
@@ -118,17 +122,18 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const availH = maxShellH - vOverhead;
   const dotFromH = Math.floor((availH - 32 * spacingV) / 31);
 
-  // Horizontal: shell padding(24+8) + screen padding+border(8+2)*2 + sidebar + label col + page padding
-  const pagePadH = isWide ? 60 : 12;
-  const shellPadH = 24 + 8;
+  // Horizontal overhead: all paddings, borders, sidebar, labels, and safety margin
+  const pagePadH = isWide ? 60 : 8;
+  const shellPadH = 24 + 8 + 2;
   const screenPadH = (8 + 2) * 2;
-  const hOverhead = shellPadH + screenPadH + SIDEBAR_W + SIDEBAR_GAP + LABEL_W + pagePadH;
+  const safetyMargin = 16;
+  const hOverhead = shellPadH + screenPadH + SIDEBAR_W + SIDEBAR_GAP + LABEL_W + pagePadH + safetyMargin;
   const availW = width - hOverhead;
   const dotFromW = Math.floor((availW - 13 * spacingH) / 12);
 
-  // On mobile (stacked), screen scrolls vertically → use width only; otherwise min(h, w)
+  // Vertical layout (non-wide) scrolls, so use width only; wide layout uses min(h, w)
   const maxDot = isWide ? 48 : 32;
-  const dotSize = Math.max(8, Math.min(isMobile ? dotFromW : Math.min(dotFromH, dotFromW), maxDot));
+  const dotSize = Math.max(8, Math.min(isWide ? Math.min(dotFromH, dotFromW) : dotFromW, maxDot));
 
   const renderTabs = () => (
     <PageTabs
@@ -162,13 +167,13 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   );
 
   const renderShell = () => (
-    <View style={[styles.shell, !isMobile && { maxHeight: height - 4 }]}>
+    <View style={[styles.shell, isWide && { maxHeight: height - 4 }]}>
       <View style={styles.spineLine} />
       <View style={styles.screen}>
         <Text style={styles.sectionTitle}>{currentPage?.title || 'Tracker'}</Text>
 
         <View style={[styles.trackerLayout, width >= 768 && styles.trackerLayoutRow]}>
-          <View style={[styles.sidebar, width >= 768 && styles.sidebarVertical]}>
+          <View style={[styles.sidebar, width >= 768 && [styles.sidebarVertical, { width: SIDEBAR_W }]]}>
             <Text style={styles.sidebarTitle}>{t('tracker.colors')}</Text>
             <ColorPicker selectedColor={selectedColor} onSelect={setSelectedColor} />
 
@@ -188,7 +193,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
             </TouchableOpacity>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.gridContainer}>
             {currentPageId ? (
               <TrackerGrid
                 getCellColor={getCellColor}
@@ -199,14 +204,14 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
             ) : (
               <Text style={styles.loadingText}>{t('tracker.loading')}</Text>
             )}
-          </ScrollView>
+          </View>
         </View>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <View style={styles.safeArea}>
       {/* Email verification banner */}
       {!emailVerified && (
         <View style={styles.verifyBanner}>
@@ -232,7 +237,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
 
       <ScrollView
         style={styles.outerScroll}
-        contentContainerStyle={[styles.pageLayout, isWide ? styles.pageLayoutCentered : styles.pageLayoutMobile]}
+        contentContainerStyle={[styles.pageLayout, isWide ? styles.pageLayoutCentered : [styles.pageLayoutMobile, { paddingBottom: bottomInset + 16 }]]}
         showsVerticalScrollIndicator={false}
         onScroll={!isWide ? onScroll : undefined}
         scrollEventThrottle={16}
@@ -272,7 +277,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
         onDeletePage={handleDeletePage}
         onOpenSettings={onOpenSettings}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -469,7 +474,7 @@ const styles = StyleSheet.create({
   },
   trackerLayoutRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
   },
   sidebar: {
     gap: 6,
@@ -509,6 +514,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: COLORS.btnResetText,
     textTransform: 'uppercase',
+  },
+  gridContainer: {
+    flex: 1,
+    overflow: 'hidden',
   },
   loadingText: {
     fontFamily: FONTS.dot,
