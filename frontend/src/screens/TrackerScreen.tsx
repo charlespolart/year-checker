@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePages } from '../hooks/usePages';
 import { useCells } from '../hooks/useCells';
@@ -28,6 +28,19 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { width, height } = useWindowDimensions();
+
+  // Collapsing header via diffClamp
+  const TAB_H = 50;
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const clampedScroll = Animated.diffClamp(scrollY, 0, TAB_H);
+  const tabTranslateY = clampedScroll.interpolate({
+    inputRange: [0, TAB_H],
+    outputRange: [0, -TAB_H],
+  });
+  const onScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    { useNativeDriver: false },
+  );
 
   const currentPageId = activePageId && pages.find(p => p.id === activePageId)
     ? activePageId
@@ -101,7 +114,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
 
   // Vertical: shell padding(8+6) + screen padding+border(8+2)*2 + section title(~30) + header row(~20)
   const vOverhead = 8 + 6 + 20 + 30 + 20;
-  const maxShellH = height - 12;
+  const maxShellH = height - 4;
   const availH = maxShellH - vOverhead;
   const dotFromH = Math.floor((availH - 32 * spacingV) / 31);
 
@@ -114,7 +127,8 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const dotFromW = Math.floor((availW - 13 * spacingH) / 12);
 
   // On mobile (stacked), screen scrolls vertically → use width only; otherwise min(h, w)
-  const dotSize = Math.max(8, Math.min(isMobile ? dotFromW : Math.min(dotFromH, dotFromW), 32));
+  const maxDot = isWide ? 48 : 32;
+  const dotSize = Math.max(8, Math.min(isMobile ? dotFromW : Math.min(dotFromH, dotFromW), maxDot));
 
   const renderTabs = () => (
     <PageTabs
@@ -148,7 +162,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   );
 
   const renderShell = () => (
-    <View style={[styles.shell, !isMobile && { maxHeight: height - 12 }]}>
+    <View style={[styles.shell, !isMobile && { maxHeight: height - 4 }]}>
       <View style={styles.spineLine} />
       <View style={styles.screen}>
         <Text style={styles.sectionTitle}>{currentPage?.title || 'Tracker'}</Text>
@@ -202,22 +216,26 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
           </TouchableOpacity>
         </View>
       )}
-      {/* Top bar: hamburger + horizontal tabs */}
+      {/* Top bar: hamburger + horizontal tabs — collapses on scroll */}
       {!isWide && (
-        <View style={styles.topBar}>
-          <TouchableOpacity style={styles.hamburger} onPress={() => setMenuOpen(true)}>
-            <Text style={styles.hamburgerText}>☰</Text>
-          </TouchableOpacity>
-          <View style={styles.tabsBarInline}>
-            {renderTabs()}
+        <Animated.View style={[styles.topBarOverlay, { transform: [{ translateY: tabTranslateY }] }]}>
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.hamburger} onPress={() => setMenuOpen(true)}>
+              <Text style={styles.hamburgerText}>☰</Text>
+            </TouchableOpacity>
+            <View style={styles.tabsBarInline}>
+              {renderTabs()}
+            </View>
           </View>
-        </View>
+        </Animated.View>
       )}
 
       <ScrollView
         style={styles.outerScroll}
-        contentContainerStyle={[styles.pageLayout, isWide && styles.pageLayoutCentered]}
+        contentContainerStyle={[styles.pageLayout, isWide ? styles.pageLayoutCentered : styles.pageLayoutMobile]}
         showsVerticalScrollIndicator={false}
+        onScroll={!isWide ? onScroll : undefined}
+        scrollEventThrottle={16}
       >
         {isWide ? (
           <View style={styles.wideLayout}>
@@ -282,6 +300,14 @@ const styles = StyleSheet.create({
     color: '#856404',
     textDecorationLine: 'underline',
   },
+  topBarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: COLORS.bg,
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -321,16 +347,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pageLayout: {
-    minHeight: '100%',
     alignItems: 'center',
-    padding: 6,
-    gap: 6,
-    paddingBottom: 8,
+    padding: 4,
+    gap: 4,
+  },
+  pageLayoutMobile: {
+    paddingTop: 54,
   },
   pageLayoutCentered: {
-    justifyContent: 'center',
+    minHeight: '100%',
+    paddingVertical: 8,
   },
   wideLayout: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'stretch',
