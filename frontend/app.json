@@ -13,14 +13,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yearchecker.app"
+      "bundleIdentifier": "app.mydiandian"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#f5f0d0",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "package": "com.yearchecker.app"
+      "package": "app.mydiandian"
     },
     "web": {
       "favicon": "./assets/favicon.png",

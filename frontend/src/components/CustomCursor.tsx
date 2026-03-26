@@ -16,7 +16,7 @@ export default function CustomCursor() {
     const img = document.createElement('img');
     img.src = src;
     Object.assign(img.style, {
-      position: 'fixed',
+      position: 'absolute',
       width: '36px',
       height: '36px',
       pointerEvents: 'none',
@@ -31,56 +31,39 @@ export default function CustomCursor() {
     style.textContent = '* { cursor: none !important; }';
     document.head.appendChild(style);
 
-    let x = 0, y = 0;
-    const update = () => {
-      const vv = window.visualViewport;
-      if (vv) {
-        const scale = vv.scale;
-        img.style.left = (x - vv.offsetLeft) / scale + 'px';
-        img.style.top = (y - vv.offsetTop) / scale + 'px';
-        img.style.width = 36 / scale + 'px';
-        img.style.height = 36 / scale + 'px';
-      } else {
-        img.style.left = x + 'px';
-        img.style.top = y + 'px';
-      }
+    const update = (x: number, y: number) => {
+      img.style.left = x + 'px';
+      img.style.top = y + 'px';
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      x = e.clientX;
-      y = e.clientY;
-      img.style.display = 'block';
-      update();
+      img.style.display = '';
+      update(e.pageX, e.pageY);
     };
 
     const onTouchStart = (e: TouchEvent) => {
-      x = e.touches[0].clientX;
-      y = e.touches[0].clientY;
       img.style.display = 'block';
-      requestAnimationFrame(update);
+      const t = e.touches[0];
+      update(t.pageX, t.pageY);
+      requestAnimationFrame(() => {
+        if (e.touches[0]) update(e.touches[0].pageX, e.touches[0].pageY);
+      });
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      x = e.touches[0].clientX;
-      y = e.touches[0].clientY;
-      update();
+      img.style.display = 'block';
+      const t = e.touches[0];
+      update(t.pageX, t.pageY);
     };
 
-    // Reposition on viewport zoom/scroll
-    const onViewportChange = () => update();
-    window.visualViewport?.addEventListener('resize', onViewportChange);
-    window.visualViewport?.addEventListener('scroll', onViewportChange);
-
     document.addEventListener('mousemove', onMouseMove, { passive: true });
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.body.addEventListener('touchstart', onTouchStart, { passive: true, capture: true });
+    document.body.addEventListener('touchmove', onTouchMove, { passive: true, capture: true });
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchmove', onTouchMove);
-      window.visualViewport?.removeEventListener('resize', onViewportChange);
-      window.visualViewport?.removeEventListener('scroll', onViewportChange);
+      document.body.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
+      document.body.removeEventListener('touchmove', onTouchMove, { capture: true } as any);
       img.remove();
       style.remove();
     };
