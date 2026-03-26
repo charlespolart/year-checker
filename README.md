@@ -1,0 +1,118 @@
+# Dian Dian (点点)
+
+A visual year tracker where you color-code each day of the year on a 12-month x 31-day grid. Built with a pixel art aesthetic and a cozy book-style design.
+
+**Live:** [mydiandian.app](https://mydiandian.app)
+
+## Features
+
+- **Year grid** -- 12 months x 31 days, color each day with a 35-color pastel palette
+- **Multiple pages** -- Create separate trackers (reading, habits, mood, etc.)
+- **Legends** -- Label colors with custom descriptions
+- **Stats** -- Days filled, best streak, yearly percentage
+- **Real-time sync** -- WebSocket-based, changes sync instantly across devices
+- **Multi-language** -- French, English, Simplified Chinese, Traditional Chinese (auto-detects device language)
+- **Cross-platform** -- Web, iOS, Android via Expo
+- **PWA** -- Installable on mobile home screens
+- **Custom cursor** -- Animated GIF cursor on web
+
+## Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | Expo (React Native), TypeScript, react-native-web |
+| Backend | Express, TypeScript |
+| Database | PostgreSQL, Drizzle ORM |
+| Auth | JWT (access + refresh token rotation), argon2id |
+| Real-time | WebSocket (ws) |
+| Fonts | Silkscreen, DotGothic16 |
+| Deploy | Nginx, systemd, Let's Encrypt |
+
+## Project Structure
+
+```
+dian-dian/
+├── backend/
+│   ├── src/
+│   │   ├── db/           # Schema & database connection
+│   │   ├── lib/          # JWT, env, WebSocket
+│   │   ├── middleware/    # Auth, validation
+│   │   └── routes/       # Auth, pages, cells, legends
+│   ├── drizzle/          # SQL migrations
+│   └── tsconfig.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/   # Grid, ColorPicker, SideMenu, etc.
+│   │   ├── contexts/     # Auth, Language
+│   │   ├── hooks/        # usePages, useCells, useLegends
+│   │   ├── lib/          # API client, WebSocket, i18n, theme
+│   │   └── screens/      # Tracker, Login, Register, Settings
+│   ├── assets/           # Icons, splash, cursor
+│   ├── public/           # PWA manifest, index.html template
+│   └── app.json
+├── nginx.conf
+└── deploy.sh
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js 22+
+- PostgreSQL
+
+### Backend
+
+```bash
+cd backend
+cp .env.example .env  # Edit with your database credentials
+npm install
+npx drizzle-kit migrate
+npm run dev            # Starts on http://localhost:3001
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run web            # Starts on http://localhost:8081
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | required |
+| `JWT_SECRET` | Secret for signing JWTs | required |
+| `PORT` | Backend port | `3000` |
+| `CORS_ORIGIN` | Allowed frontend origin | `http://localhost:8081` |
+
+## Deployment
+
+The app is designed to run on a single VPS with Nginx as a reverse proxy.
+
+```bash
+# On the server
+git clone git@github.com:charlespolart/dian-dian.git
+cd dian-dian
+
+# Create production .env
+nano backend/.env
+
+# Setup Nginx
+cp nginx.conf /etc/nginx/sites-available/diandian
+ln -s /etc/nginx/sites-available/diandian /etc/nginx/sites-enabled/
+certbot --nginx -d mydiandian.app
+nginx -t && systemctl restart nginx
+
+# Deploy
+chmod +x deploy.sh
+./deploy.sh
+```
+
+The deploy script builds the backend, runs migrations, exports the frontend for web, and starts the systemd service.
+
+## License
+
+All rights reserved.
