@@ -99,16 +99,16 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const SIDEBAR_GAP = hasSidebarRow ? 16 : 0;
   const LABEL_W = 24;
 
-  // Vertical: shell padding(12+10) + screen padding+border(10+2)*2 + section title(~30) + header row(~20) + shell gap(8)
-  const vOverhead = 12 + 10 + 24 + 8 + 30 + 20;
-  const maxShellH = height - 24;
+  // Vertical: shell padding(8+6) + screen padding+border(8+2)*2 + section title(~30) + header row(~20)
+  const vOverhead = 8 + 6 + 20 + 30 + 20;
+  const maxShellH = height - 12;
   const availH = maxShellH - vOverhead;
   const dotFromH = Math.floor((availH - 32 * spacingV) / 31);
 
-  // Horizontal: shell padding(28+10) + screen padding+border(10+2)*2 + sidebar + label col + page padding
-  const pagePadH = isWide ? 80 : 24;
-  const shellPadH = 28 + 10;
-  const screenPadH = (10 + 2) * 2;
+  // Horizontal: shell padding(24+8) + screen padding+border(8+2)*2 + sidebar + label col + page padding
+  const pagePadH = isWide ? 60 : 12;
+  const shellPadH = 24 + 8;
+  const screenPadH = (8 + 2) * 2;
   const hOverhead = shellPadH + screenPadH + SIDEBAR_W + SIDEBAR_GAP + LABEL_W + pagePadH;
   const availW = width - hOverhead;
   const dotFromW = Math.floor((availW - 13 * spacingH) / 12);
@@ -148,7 +148,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   );
 
   const renderShell = () => (
-    <View style={[styles.shell, !isMobile && { maxHeight: height - 24 }]}>
+    <View style={[styles.shell, !isMobile && { maxHeight: height - 12 }]}>
       <View style={styles.spineLine} />
       <View style={styles.screen}>
         <Text style={styles.sectionTitle}>{currentPage?.title || 'Tracker'}</Text>
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'stretch',
-    gap: 30,
+    gap: 20,
     width: '100%',
   },
   leftColumn: {
