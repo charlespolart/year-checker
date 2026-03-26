@@ -24,6 +24,8 @@ const translations = {
     'auth.verifyEmailBanner': 'Vérifiez votre email pour activer votre compte.',
     'auth.resendVerification': 'Renvoyer',
     'auth.verificationSent': 'Email envoyé !',
+    'auth.emailVerifiedSuccess': 'Email vérifié avec succès !',
+    'auth.verifyEmailError': 'Lien invalide ou expiré.',
 
     // Tracker
     'tracker.colors': 'Couleurs',
@@ -95,6 +97,8 @@ const translations = {
     'auth.verifyEmailBanner': 'Check your email to verify your account.',
     'auth.resendVerification': 'Resend',
     'auth.verificationSent': 'Email sent!',
+    'auth.emailVerifiedSuccess': 'Email verified successfully!',
+    'auth.verifyEmailError': 'Invalid or expired link.',
 
     // Tracker
     'tracker.colors': 'Colors',
@@ -166,6 +170,8 @@ const translations = {
     'auth.verifyEmailBanner': '请查看邮箱验证您的账户。',
     'auth.resendVerification': '重新发送',
     'auth.verificationSent': '邮件已发送！',
+    'auth.emailVerifiedSuccess': '邮箱验证成功！',
+    'auth.verifyEmailError': '链接无效或已过期。',
 
     // Tracker
     'tracker.colors': '颜色',
@@ -237,6 +243,8 @@ const translations = {
     'auth.verifyEmailBanner': '請查看信箱驗證您的帳戶。',
     'auth.resendVerification': '重新發送',
     'auth.verificationSent': '郵件已發送！',
+    'auth.emailVerifiedSuccess': '信箱驗證成功！',
+    'auth.verifyEmailError': '連結無效或已過期。',
 
     // Tracker
     'tracker.colors': '顏色',
