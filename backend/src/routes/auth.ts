@@ -69,7 +69,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       path: '/api/auth',
     });
 
-    res.status(201).json({ accessToken, refreshToken, userId: user.id });
+    res.status(201).json({ accessToken, refreshToken, userId: user.id, emailVerified: false });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -111,7 +111,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       path: '/api/auth',
     });
 
-    res.json({ accessToken, refreshToken, userId: user.id });
+    res.json({ accessToken, refreshToken, userId: user.id, emailVerified: user.emailVerified });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });

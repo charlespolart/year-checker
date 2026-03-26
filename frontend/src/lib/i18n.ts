@@ -21,6 +21,9 @@ const translations = {
     'auth.resetPasswordBtn': 'Réinitialiser',
     'auth.resetPasswordSuccess': 'Mot de passe modifié ! Vous pouvez vous connecter.',
     'auth.backToLogin': 'Retour à la connexion',
+    'auth.verifyEmailBanner': 'Vérifiez votre email pour activer votre compte.',
+    'auth.resendVerification': 'Renvoyer',
+    'auth.verificationSent': 'Email envoyé !',
 
     // Tracker
     'tracker.colors': 'Couleurs',
@@ -89,6 +92,9 @@ const translations = {
     'auth.resetPasswordBtn': 'Reset password',
     'auth.resetPasswordSuccess': 'Password changed! You can now log in.',
     'auth.backToLogin': 'Back to login',
+    'auth.verifyEmailBanner': 'Check your email to verify your account.',
+    'auth.resendVerification': 'Resend',
+    'auth.verificationSent': 'Email sent!',
 
     // Tracker
     'tracker.colors': 'Colors',
@@ -157,6 +163,9 @@ const translations = {
     'auth.resetPasswordBtn': '重置密码',
     'auth.resetPasswordSuccess': '密码已修改！请登录。',
     'auth.backToLogin': '返回登录',
+    'auth.verifyEmailBanner': '请查看邮箱验证您的账户。',
+    'auth.resendVerification': '重新发送',
+    'auth.verificationSent': '邮件已发送！',
 
     // Tracker
     'tracker.colors': '颜色',
@@ -225,6 +234,9 @@ const translations = {
     'auth.resetPasswordBtn': '重置密碼',
     'auth.resetPasswordSuccess': '密碼已修改！請登入。',
     'auth.backToLogin': '返回登入',
+    'auth.verifyEmailBanner': '請查看信箱驗證您的帳戶。',
+    'auth.resendVerification': '重新發送',
+    'auth.verificationSent': '郵件已發送！',
 
     // Tracker
     'tracker.colors': '顏色',
