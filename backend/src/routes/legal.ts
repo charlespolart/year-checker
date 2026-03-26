@@ -24,14 +24,18 @@ const ui = {
   footer: { en: 'Dian Dian (点点) — mydiandian.app', fr: 'Dian Dian (点点) — mydiandian.app', 'zh-CN': '点点 — mydiandian.app', 'zh-TW': '點點 — mydiandian.app' },
   sendMessage: { en: 'Send message', fr: 'Envoyer', 'zh-CN': '发送消息', 'zh-TW': '發送訊息' },
   sending: { en: 'Sending...', fr: 'Envoi...', 'zh-CN': '发送中...', 'zh-TW': '發送中...' },
-  sent: { en: "Message sent! We'll get back to you soon.", fr: 'Message envoyé ! Nous reviendrons vers vous rapidement.', 'zh-CN': '消息已发送！我们会尽快回复。', 'zh-TW': '訊息已發送！我們會盡快回覆。' },
-  sendFailed: { en: 'Failed to send. Please try again or email us directly.', fr: "Échec de l'envoi. Réessayez ou écrivez-nous directement.", 'zh-CN': '发送失败，请重试或直接发邮件。', 'zh-TW': '發送失敗，請重試或直接發郵件。' },
+  sent: { en: 'Message sent! We will get back to you soon.', fr: 'Message envoyé ! Nous reviendrons vers vous rapidement.', 'zh-CN': '消息已发送！我们会尽快回复。', 'zh-TW': '訊息已發送！我們會盡快回覆。' },
+  sendFailed: { en: 'Failed to send. Please try again or email us directly.', fr: 'Envoi échoué. Réessayez ou écrivez-nous directement.', 'zh-CN': '发送失败，请重试或直接发邮件。', 'zh-TW': '發送失敗，請重試或直接發郵件。' },
   networkError: { en: 'Network error. Please try again.', fr: 'Erreur réseau. Réessayez.', 'zh-CN': '网络错误，请重试。', 'zh-TW': '網路錯誤，請重試。' },
   orEmail: { en: 'Or email us directly at', fr: 'Ou écrivez-nous directement à', 'zh-CN': '或直接发邮件至', 'zh-TW': '或直接發郵件至' },
   name: { en: 'Name', fr: 'Nom', 'zh-CN': '姓名', 'zh-TW': '姓名' },
   email: { en: 'Email', fr: 'Email', 'zh-CN': '邮箱', 'zh-TW': '電子郵件' },
   message: { en: 'Message', fr: 'Message', 'zh-CN': '消息', 'zh-TW': '訊息' },
 };
+
+function jsEscape(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
 
 function layout(title: string, content: string, lang: Lang): string {
   return `<!DOCTYPE html>
@@ -473,7 +477,7 @@ function contactContent(lang: Lang): string {
         const msg = document.getElementById('formMsg');
         const form = e.target;
         btn.disabled = true;
-        btn.textContent = '${ui.sending[lang]}';
+        btn.textContent = '${jsEscape(ui.sending[lang])}';
         msg.style.display = 'none';
         try {
           const res = await fetch('/api/contact', {
@@ -483,19 +487,19 @@ function contactContent(lang: Lang): string {
           });
           if (res.ok) {
             msg.style.color = '#708060';
-            msg.textContent = '${ui.sent[lang]}';
+            msg.textContent = '${jsEscape(ui.sent[lang])}';
             form.reset();
           } else {
             msg.style.color = '#c0392b';
-            msg.textContent = '${ui.sendFailed[lang]}';
+            msg.textContent = '${jsEscape(ui.sendFailed[lang])}';
           }
         } catch {
           msg.style.color = '#c0392b';
-          msg.textContent = '${ui.networkError[lang]}';
+          msg.textContent = '${jsEscape(ui.networkError[lang])}';
         }
         msg.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = '${ui.sendMessage[lang]}';
+        btn.textContent = '${jsEscape(ui.sendMessage[lang])}';
       });
     </script>`;
 }

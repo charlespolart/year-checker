@@ -46,6 +46,9 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 // Contact form
 import { Resend } from 'resend';
 const resend = new Resend(env.RESEND_API_KEY);
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 const contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { error: 'Too many messages, try again later' } });
 app.post('/api/contact', contactLimiter, async (req, res) => {
   const { name, email, message } = req.body;
@@ -53,13 +56,16 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
     res.status(400).json({ error: 'All fields are required' });
     return;
   }
+  const safeName = escapeHtml(name.trim());
+  const safeEmail = escapeHtml(email.trim());
+  const safeMessage = escapeHtml(message.trim()).replace(/\n/g, '<br/>');
   try {
     await resend.emails.send({
       from: 'Dian Dian Contact <noreply@mydiandian.app>',
       to: 'contact@mydiandian.app',
       replyTo: email.trim(),
-      subject: `[Dian Dian] Message from ${name.trim()}`,
-      html: `<p><strong>From:</strong> ${name.trim()} (${email.trim()})</p><hr/><p>${message.trim().replace(/\n/g, '<br/>')}</p>`,
+      subject: `[Dian Dian] Message from ${safeName}`,
+      html: `<p><strong>From:</strong> ${safeName} (${safeEmail})</p><hr/><p>${safeMessage}</p>`,
     });
     res.json({ ok: true });
   } catch (err) {
