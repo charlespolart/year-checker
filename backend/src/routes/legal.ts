@@ -49,6 +49,7 @@ function layout(title: string, content: string, lang: Lang): string {
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: auto; overflow: auto; }
     body {
       background: #f5f0d0;
       color: #5c4a2a;
