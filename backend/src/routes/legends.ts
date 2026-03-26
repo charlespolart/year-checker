@@ -17,7 +17,7 @@ router.get('/:pageId', async (req, res) => {
       .from(pages)
       .where(and(eq(pages.id, String(req.params.pageId)), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
 
     const result = await db.select()
       .from(legends)
@@ -26,7 +26,7 @@ router.get('/:pageId', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Get legends error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -43,7 +43,7 @@ router.post('/:pageId', validate(createLegendSchema), async (req, res) => {
       .from(pages)
       .where(and(eq(pages.id, String(req.params.pageId)), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
 
     const [legend] = await db.insert(legends)
       .values({ pageId: String(req.params.pageId), ...req.body })
@@ -53,7 +53,7 @@ router.post('/:pageId', validate(createLegendSchema), async (req, res) => {
     res.status(201).json(legend);
   } catch (err) {
     console.error('Create legend error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -72,7 +72,7 @@ router.put('/:pageId/reorder', validate(reorderSchema), async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Reorder legends error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -83,21 +83,21 @@ router.delete('/:id', async (req, res) => {
       .from(legends)
       .where(eq(legends.id, String(req.params.id)))
       .limit(1);
-    if (!legend) { res.status(404).json({ error: 'Légende non trouvée' }); return; }
+    if (!legend) { res.status(404).json({ error: 'Legend not found' }); return; }
 
     // Verify ownership
     const [page] = await db.select({ id: pages.id })
       .from(pages)
       .where(and(eq(pages.id, legend.pageId), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(403).json({ error: 'Non autorisé' }); return; }
+    if (!page) { res.status(403).json({ error: 'Unauthorized' }); return; }
 
     await db.delete(legends).where(eq(legends.id, String(req.params.id)));
     broadcast(req.userId!, 'legend:deleted', { id: String(req.params.id), pageId: legend.pageId });
     res.json({ ok: true });
   } catch (err) {
     console.error('Delete legend error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -11,8 +11,8 @@ import { eq } from 'drizzle-orm';
 const router = Router();
 
 const registerSchema = z.object({
-  email: z.string().email('Email invalide').max(255),
-  password: z.string().min(8, 'Mot de passe: 8 caractères minimum').max(128),
+  email: z.string().email('Invalid email').max(255),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
 });
 
 const loginSchema = registerSchema;
@@ -24,7 +24,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
     const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
     if (existing.length > 0) {
-      res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
+      res.status(409).json({ error: 'An account already exists with this email' });
       return;
     }
 
@@ -33,7 +33,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const [user] = await db.insert(users).values({ email, passwordHash }).returning({ id: users.id });
 
     // Create default page
-    await db.insert(pages).values({ userId: user.id, title: 'Mon Tracker', position: 0 });
+    await db.insert(pages).values({ userId: user.id, title: 'My Tracker', position: 0 });
 
     // Generate tokens
     const accessToken = await signAccessToken(user.id);
@@ -57,7 +57,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     res.status(201).json({ accessToken, refreshToken, userId: user.id });
   } catch (err) {
     console.error('Register error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -68,13 +68,13 @@ router.post('/login', validate(loginSchema), async (req, res) => {
 
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (!user) {
-      res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+      res.status(401).json({ error: 'Invalid email or password' });
       return;
     }
 
     const valid = await argon2.verify(user.passwordHash, password);
     if (!valid) {
-      res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+      res.status(401).json({ error: 'Invalid email or password' });
       return;
     }
 
@@ -99,7 +99,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     res.json({ accessToken, refreshToken, userId: user.id });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -108,7 +108,7 @@ router.post('/refresh', async (req, res) => {
   try {
     const token = req.body?.refreshToken || req.cookies?.refreshToken;
     if (!token) {
-      res.status(401).json({ error: 'Refresh token manquant' });
+      res.status(401).json({ error: 'Missing refresh token' });
       return;
     }
 
@@ -116,7 +116,7 @@ router.post('/refresh', async (req, res) => {
     const [stored] = await db.select().from(refreshTokens).where(eq(refreshTokens.tokenHash, tokenH)).limit(1);
 
     if (!stored || stored.expiresAt < new Date()) {
-      res.status(401).json({ error: 'Refresh token invalide ou expiré' });
+      res.status(401).json({ error: 'Invalid or expired refresh token' });
       return;
     }
 
@@ -144,7 +144,7 @@ router.post('/refresh', async (req, res) => {
     res.json({ accessToken, refreshToken: newRefreshToken });
   } catch (err) {
     console.error('Refresh error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -160,7 +160,7 @@ router.post('/logout', requireAuth, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Logout error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

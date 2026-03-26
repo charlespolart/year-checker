@@ -60,8 +60,8 @@ export function useCells(pageId: string | null) {
       method: 'PUT',
       body: JSON.stringify({ month, day, color }),
     });
-    if (!res.ok) throw new Error('Erreur');
-    if (!res.ok) throw new Error('Erreur');
+    if (!res.ok) throw new Error('Request failed');
+    if (!res.ok) throw new Error('Request failed');
     return res.json();
   }, [pageId]);
 

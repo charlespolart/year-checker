@@ -18,7 +18,7 @@ router.get('/:pageId', async (req, res) => {
       .from(pages)
       .where(and(eq(pages.id, String(req.params.pageId)), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
 
     const result = await db.select()
       .from(cells)
@@ -26,7 +26,7 @@ router.get('/:pageId', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Get cells error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -47,7 +47,7 @@ router.put('/:pageId', validate(upsertCellSchema), async (req, res) => {
       .from(pages)
       .where(and(eq(pages.id, pageId), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
 
     const [cell] = await db.insert(cells)
       .values({ pageId, month, day, color, updatedAt: new Date() })
@@ -61,7 +61,7 @@ router.put('/:pageId', validate(upsertCellSchema), async (req, res) => {
     res.json(cell);
   } catch (err) {
     console.error('Upsert cell error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -80,7 +80,7 @@ router.delete('/:pageId', validate(deleteCellSchema), async (req, res) => {
       .from(pages)
       .where(and(eq(pages.id, pageId), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
 
     await db.delete(cells)
       .where(and(eq(cells.pageId, pageId), eq(cells.month, month), eq(cells.day, day)));
@@ -89,7 +89,7 @@ router.delete('/:pageId', validate(deleteCellSchema), async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Delete cell error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -100,7 +100,7 @@ router.delete('/:pageId/all', async (req, res) => {
       .from(pages)
       .where(and(eq(pages.id, String(req.params.pageId)), eq(pages.userId, req.userId!)))
       .limit(1);
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
 
     await db.delete(cells).where(eq(cells.pageId, String(req.params.pageId)));
 
@@ -108,7 +108,7 @@ router.delete('/:pageId/all', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Reset cells error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

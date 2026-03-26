@@ -97,7 +97,7 @@ export async function login(email: string, password: string) {
 
   if (!res.ok) {
     const data = await res.json();
-    throw new Error(data.error || 'Erreur de connexion');
+    throw new Error(data.error || 'Login error');
   }
 
   const data = await res.json();
@@ -115,7 +115,7 @@ export async function register(email: string, password: string) {
 
   if (!res.ok) {
     const data = await res.json();
-    throw new Error(data.error || "Erreur d'inscription");
+    throw new Error(data.error || 'Registration error');
   }
 
   const data = await res.json();

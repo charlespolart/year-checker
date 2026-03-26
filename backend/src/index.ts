@@ -28,7 +28,7 @@ app.use(cookieParser());
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 30,
-  message: { error: 'Trop de tentatives, réessayez dans 15 minutes' },
+  message: { error: 'Too many attempts, try again in 15 minutes' },
 });
 
 // Routes

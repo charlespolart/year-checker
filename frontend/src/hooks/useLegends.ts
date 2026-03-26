@@ -65,14 +65,14 @@ export function useLegends(pageId: string | null) {
       method: 'POST',
       body: JSON.stringify({ color, label, position: legends.length }),
     });
-    if (!res.ok) throw new Error('Erreur');
-    if (!res.ok) throw new Error('Erreur');
+    if (!res.ok) throw new Error('Request failed');
+    if (!res.ok) throw new Error('Request failed');
     return res.json();
   }, [pageId, legends.length]);
 
   const deleteLegend = useCallback(async (id: string) => {
     const res = await apiFetch(`/legends/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Erreur');
+    if (!res.ok) throw new Error('Request failed');
   }, []);
 
   return { legends, loading, createLegend, deleteLegend, refetch: fetchLegends };

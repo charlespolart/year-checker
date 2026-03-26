@@ -18,7 +18,7 @@ export const refreshTokens = pgTable('refresh_tokens', {
 export const pages = pgTable('pages', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  title: text('title').notNull().default('Nouveau Tracker'),
+  title: text('title').notNull().default('New Tracker'),
   position: integer('position').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });

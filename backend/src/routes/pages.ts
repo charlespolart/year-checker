@@ -20,12 +20,12 @@ router.get('/', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Get pages error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
 const createPageSchema = z.object({
-  title: z.string().min(1).max(200).default('Nouveau Tracker'),
+  title: z.string().min(1).max(200).default('New Tracker'),
   position: z.number().int().min(0).default(0),
 });
 
@@ -39,7 +39,7 @@ router.post('/', validate(createPageSchema), async (req, res) => {
     res.status(201).json(page);
   } catch (err) {
     console.error('Create page error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -55,12 +55,12 @@ router.patch('/:id', validate(updatePageSchema), async (req, res) => {
       .set(req.body)
       .where(and(eq(pages.id, String(req.params.id)), eq(pages.userId, req.userId!)))
       .returning();
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
     broadcast(req.userId!, 'page:updated', page);
     res.json(page);
   } catch (err) {
     console.error('Update page error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -70,12 +70,12 @@ router.delete('/:id', async (req, res) => {
     const [page] = await db.delete(pages)
       .where(and(eq(pages.id, String(req.params.id)), eq(pages.userId, req.userId!)))
       .returning({ id: pages.id });
-    if (!page) { res.status(404).json({ error: 'Page non trouvée' }); return; }
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
     broadcast(req.userId!, 'page:deleted', { id: page.id });
     res.json({ ok: true });
   } catch (err) {
     console.error('Delete page error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -49,7 +49,7 @@ export function usePages() {
       method: 'POST',
       body: JSON.stringify({ title, position: pages.length }),
     });
-    if (!res.ok) throw new Error('Erreur lors de la création');
+    if (!res.ok) throw new Error('Failed to create page');
     return res.json();
   }, [pages.length]);
 
@@ -58,13 +58,13 @@ export function usePages() {
       method: 'PATCH',
       body: JSON.stringify(updates),
     });
-    if (!res.ok) throw new Error('Erreur lors de la mise à jour');
+    if (!res.ok) throw new Error('Failed to update page');
     return res.json();
   }, []);
 
   const deletePage = useCallback(async (id: string) => {
     const res = await apiFetch(`/pages/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Erreur lors de la suppression');
+    if (!res.ok) throw new Error('Failed to delete page');
   }, []);
 
   return { pages, loading, createPage, updatePage, deletePage, refetch: fetchPages };

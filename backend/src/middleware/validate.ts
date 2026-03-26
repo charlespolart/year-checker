@@ -8,7 +8,7 @@ export function validate(schema: ZodSchema) {
       next();
     } catch (err) {
       if (err instanceof ZodError) {
-        res.status(400).json({ error: 'Données invalides', details: err.errors });
+        res.status(400).json({ error: 'Invalid data', details: err.errors });
         return;
       }
       next(err);
