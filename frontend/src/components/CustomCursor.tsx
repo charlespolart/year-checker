@@ -26,10 +26,20 @@ export default function CustomCursor() {
     });
     document.body.appendChild(img);
 
-    // Hide default cursor
+    // Hide default cursor — aggressive rule covering all elements and states
     const style = document.createElement('style');
-    style.textContent = '* { cursor: none !important; }';
+    style.textContent = `
+      *, *::before, *::after,
+      html, body, div, span, a, button, input, textarea, select, label,
+      [style], [class] {
+        cursor: none !important;
+      }
+    `;
     document.head.appendChild(style);
+
+    // Also set cursor on html/body directly for edge cases
+    document.documentElement.style.setProperty('cursor', 'none', 'important');
+    document.body.style.setProperty('cursor', 'none', 'important');
 
     const update = (x: number, y: number) => {
       img.style.left = x + 'px';
@@ -64,6 +74,8 @@ export default function CustomCursor() {
       document.removeEventListener('mousemove', onMouseMove);
       document.body.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
       document.body.removeEventListener('touchmove', onTouchMove, { capture: true } as any);
+      document.documentElement.style.removeProperty('cursor');
+      document.body.style.removeProperty('cursor');
       img.remove();
       style.remove();
     };
