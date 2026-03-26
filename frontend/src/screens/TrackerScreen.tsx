@@ -32,7 +32,13 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   // Collapsing header via diffClamp
   const TAB_H = 50;
   const scrollY = useRef(new Animated.Value(0)).current;
-  const clampedScroll = Animated.diffClamp(scrollY, 0, TAB_H);
+  // Clamp scrollY to >= 0 to prevent bounce pushing the bar up
+  const clampedScrollY = scrollY.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [0, 0, 1],
+    extrapolateRight: 'identity',
+  });
+  const clampedScroll = Animated.diffClamp(clampedScrollY, 0, TAB_H);
   const tabTranslateY = clampedScroll.interpolate({
     inputRange: [0, TAB_H],
     outputRange: [0, -TAB_H],
@@ -355,6 +361,7 @@ const styles = StyleSheet.create({
   },
   pageLayoutMobile: {
     paddingTop: 54,
+    paddingBottom: 12,
   },
   pageLayoutCentered: {
     minHeight: '100%',
