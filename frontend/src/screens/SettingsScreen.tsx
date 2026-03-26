@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -109,10 +109,22 @@ export default function SettingsScreen({ onBack }: Props) {
           <Text style={styles.comingSoon}>{t('settings.comingSoon')}</Text>
         </View>
 
-        {/* Version */}
+        {/* Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.version')}</Text>
-          <Text style={styles.comingSoon}>1.0.0</Text>
+          <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://mydiandian.app/about')}>
+            <Text style={styles.linkText}>{t('settings.about')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://mydiandian.app/contact')}>
+            <Text style={styles.linkText}>{t('settings.contact')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://mydiandian.app/privacy')}>
+            <Text style={styles.linkText}>{t('settings.privacy')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://mydiandian.app/terms')}>
+            <Text style={styles.linkText}>{t('settings.terms')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.versionText}>{t('settings.version')} 1.0.0</Text>
         </View>
 
         {/* Account */}
@@ -229,6 +241,18 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: COLORS.btnResetText,
     textTransform: 'uppercase',
+  },
+  linkText: {
+    fontFamily: FONTS.dot,
+    fontSize: 13,
+    color: COLORS.accent,
+    paddingVertical: 4,
+  },
+  versionText: {
+    fontFamily: FONTS.dot,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 4,
   },
   deleteBtn: {
     borderWidth: 2,

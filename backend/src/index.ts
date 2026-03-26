@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.js';
 import pagesRoutes from './routes/pages.js';
 import cellsRoutes from './routes/cells.js';
 import legendsRoutes from './routes/legends.js';
+import legalRoutes from './routes/legal.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +45,9 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // WebSocket
 setupWebSocket(server);
+
+// Legal pages (served before static files so routes take priority)
+app.use(legalRoutes);
 
 // Serve frontend static files in production
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
