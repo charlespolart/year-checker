@@ -35,14 +35,13 @@ export const COLORS = {
   accent: '#8080a8',
 };
 
-export const PALETTE = [
-  '#FFE5EC', '#FFC2D1', '#FF9EB8', '#FF7AA0', '#FF5C8A',
-  '#FFE8D6', '#FFD1B0', '#FFBA8A', '#FFA364', '#FF8C42',
-  '#FFF9DB', '#FFF3BF', '#FFEC99', '#FFE066', '#FFD43B',
-  '#E6F4EA', '#C7E9C0', '#A8D8A8', '#7BC47F', '#4CAF50',
-  '#E7F5FF', '#D0EBFF', '#A5D8FF', '#74C0FC', '#4DABF7',
-  '#F3F0FF', '#E5DBFF', '#D0BFFF', '#B197FC', '#9775FA',
-  '#F8F8F8', '#DADADA', '#B0B0B0', '#7F7F7F', '#3C3C3C',
+export const DEFAULT_PALETTE: string[][] = [
+  ['#FFE5EC', '#FFC2D1', '#FF9EB8', '#FF7AA0', '#FF5C8A', '#E8456B'],
+  ['#FFE8D6', '#FFD1B0', '#FFBA8A', '#FFA364', '#FF8C42', '#E06A20'],
+  ['#FFF9DB', '#FFF3BF', '#FFEC99', '#FFE066', '#FFD43B', '#E6B800'],
+  ['#E6F4EA', '#C7E9C0', '#A8D8A8', '#7BC47F', '#4CAF50', '#2E7D32'],
+  ['#E7F5FF', '#D0EBFF', '#A5D8FF', '#74C0FC', '#4DABF7', '#1976D2'],
+  ['#F3F0FF', '#E5DBFF', '#D0BFFF', '#B197FC', '#9775FA', '#6A1FC0'],
 ];
 
 export const FONTS = {

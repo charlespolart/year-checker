@@ -6,6 +6,7 @@ export interface Page {
   id: string;
   title: string;
   position: number;
+  palette: string[][] | null;
   createdAt: string;
 }
 
@@ -53,7 +54,7 @@ export function usePages() {
     return res.json();
   }, [pages.length]);
 
-  const updatePage = useCallback(async (id: string, updates: { title?: string; position?: number }) => {
+  const updatePage = useCallback(async (id: string, updates: { title?: string; position?: number; palette?: string[][] | null }) => {
     const res = await apiFetch(`/pages/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),

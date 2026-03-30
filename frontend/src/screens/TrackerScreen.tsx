@@ -1,6 +1,10 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const SafeContainer = Platform.OS === 'web'
+  ? ({ children, ...props }: any) => <View style={props.style}>{children}</View>
+  : SafeAreaView;
 import { usePages } from '../hooks/usePages';
 import { useCells } from '../hooks/useCells';
 import { useLegends } from '../hooks/useLegends';
@@ -8,11 +12,12 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import TrackerGrid from '../components/TrackerGrid';
 import ColorPicker from '../components/ColorPicker';
+import PaletteEditor from '../components/PaletteEditor';
 import LegendList from '../components/LegendList';
 import PageTabs from '../components/PageTabs';
 import SideMenu from '../components/SideMenu';
 import Stats from '../components/Stats';
-import { COLORS, FONTS, PALETTE } from '../lib/theme';
+import { COLORS, FONTS, DEFAULT_PALETTE } from '../lib/theme';
 
 interface Props {
   onOpenSettings: () => void;
@@ -24,7 +29,8 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const [verificationSent, setVerificationSent] = useState(false);
   const { pages, createPage, updatePage, deletePage } = usePages();
   const [activePageId, setActivePageId] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(PALETTE[0]);
+  const [selectedColor, setSelectedColor] = useState<string | null>(DEFAULT_PALETTE[0][0]);
+  const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { width, height } = useWindowDimensions();
@@ -76,6 +82,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const { legends, createLegend, deleteLegend } = useLegends(currentPageId);
 
   const currentPage = pages.find(p => p.id === currentPageId);
+  const currentPalette = currentPage?.palette || DEFAULT_PALETTE;
 
   const handleCellPress = useCallback((month: number, day: number) => {
     if (selectedColor) {
@@ -198,7 +205,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
         <View style={[styles.trackerLayout, width >= 768 && styles.trackerLayoutRow]}>
           <View style={[styles.sidebar, width >= 768 && [styles.sidebarVertical, { width: SIDEBAR_W }]]}>
             <Text style={styles.sidebarTitle}>{t('tracker.colors')}</Text>
-            <ColorPicker selectedColor={selectedColor} onSelect={setSelectedColor} />
+            <ColorPicker palette={currentPalette} selectedColor={selectedColor} onSelect={setSelectedColor} onOpenPaletteConfig={() => setPaletteEditorOpen(true)} />
 
             <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
             <LegendList
@@ -234,7 +241,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   );
 
   return (
-    <View style={styles.safeArea}>
+    <SafeContainer style={styles.safeArea} edges={['top', 'bottom']}>
       {/* Email verification banner */}
       {!emailVerified && (
         <View style={styles.verifyBanner}>
@@ -302,7 +309,25 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
         onDeletePage={handleDeletePage}
         onOpenSettings={onOpenSettings}
       />
-    </View>
+
+      {paletteEditorOpen && currentPageId && (
+        <PaletteEditor
+          palette={currentPalette}
+          cells={cells}
+          legends={legends}
+          onSave={(palette) => {
+            const isDefault = JSON.stringify(palette) === JSON.stringify(DEFAULT_PALETTE);
+            updatePage(currentPageId, { palette: isDefault ? null : palette });
+            // Reset selected color if it's no longer in the new palette
+            if (palette && selectedColor) {
+              const flat = palette.flat();
+              if (!flat.includes(selectedColor)) setSelectedColor(palette[0]?.[0] || null);
+            }
+          }}
+          onClose={() => setPaletteEditorOpen(false)}
+        />
+      )}
+    </SafeContainer>
   );
 }
 

@@ -96,19 +96,21 @@ export default function App() {
     );
   }
 
-  return (
-    <SafeAreaProvider>
-      <DottedBackground>
-        <LanguageProvider>
-          <AuthProvider>
-            <StatusBar style="dark" />
-            <CustomCursor />
-            <AppContent />
-          </AuthProvider>
-        </LanguageProvider>
-      </DottedBackground>
-    </SafeAreaProvider>
+  const content = (
+    <DottedBackground>
+      <LanguageProvider>
+        <AuthProvider>
+          <StatusBar style="dark" />
+          <CustomCursor />
+          <AppContent />
+        </AuthProvider>
+      </LanguageProvider>
+    </DottedBackground>
   );
+
+  // SafeAreaProvider crashes on web with React 19 — skip it on web
+  if (Platform.OS === 'web') return content;
+  return <SafeAreaProvider>{content}</SafeAreaProvider>;
 }
 
 const styles = StyleSheet.create({

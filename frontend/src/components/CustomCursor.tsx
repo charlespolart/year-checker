@@ -1,8 +1,18 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
-// On web, require() returns the URL string directly via the bundler
 const cursorSrc = require('../../assets/cursor.gif') as string | { default: string; uri?: string };
+
+// Create a persistent container outside React's tree — only once
+let cursorContainer: HTMLDivElement | null = null;
+function getCursorContainer(): HTMLDivElement {
+  if (!cursorContainer) {
+    cursorContainer = document.createElement('div');
+    cursorContainer.id = 'custom-cursor-container';
+    document.documentElement.appendChild(cursorContainer);
+  }
+  return cursorContainer;
+}
 
 export default function CustomCursor() {
   useEffect(() => {
@@ -12,6 +22,8 @@ export default function CustomCursor() {
       ? cursorSrc
       : (cursorSrc as any)?.default ?? (cursorSrc as any)?.uri ?? '';
     if (!src) return;
+
+    const container = getCursorContainer();
 
     const img = document.createElement('img');
     img.src = src;
@@ -24,9 +36,9 @@ export default function CustomCursor() {
       transform: 'translate(-50%, -50%)',
       display: 'none',
     });
-    document.body.appendChild(img);
+    container.appendChild(img);
 
-    // Hide default cursor — aggressive rule covering all elements and states
+    // Hide default cursor
     const style = document.createElement('style');
     style.textContent = `
       *, *::before, *::after,
@@ -35,9 +47,8 @@ export default function CustomCursor() {
         cursor: none !important;
       }
     `;
-    document.head.appendChild(style);
+    container.appendChild(style);
 
-    // Also set cursor on html/body directly for edge cases
     document.documentElement.style.setProperty('cursor', 'none', 'important');
     document.body.style.setProperty('cursor', 'none', 'important');
 
@@ -67,13 +78,13 @@ export default function CustomCursor() {
     };
 
     document.addEventListener('mousemove', onMouseMove, { passive: true });
-    document.body.addEventListener('touchstart', onTouchStart, { passive: true, capture: true });
-    document.body.addEventListener('touchmove', onTouchMove, { passive: true, capture: true });
+    document.addEventListener('touchstart', onTouchStart, { passive: true, capture: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true, capture: true });
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
-      document.body.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
-      document.body.removeEventListener('touchmove', onTouchMove, { capture: true } as any);
+      document.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
+      document.removeEventListener('touchmove', onTouchMove, { capture: true } as any);
       document.documentElement.style.removeProperty('cursor');
       document.body.style.removeProperty('cursor');
       img.remove();

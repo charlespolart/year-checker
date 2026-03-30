@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
       .from(pages)
       .where(eq(pages.userId, req.userId!))
       .orderBy(asc(pages.position));
-    res.json(result);
+    res.json(result.map(p => ({ ...p, palette: p.palette ? JSON.parse(p.palette) : null })));
   } catch (err) {
     console.error('Get pages error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -35,29 +35,40 @@ router.post('/', validate(createPageSchema), async (req, res) => {
     const [page] = await db.insert(pages)
       .values({ userId: req.userId!, ...req.body })
       .returning();
-    broadcast(req.userId!, 'page:created', page);
-    res.status(201).json(page);
+    const created = { ...page, palette: page.palette ? JSON.parse(page.palette) : null };
+    broadcast(req.userId!, 'page:created', created);
+    res.status(201).json(created);
   } catch (err) {
     console.error('Create page error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+const paletteSchema = z.array(
+  z.array(z.string().regex(/^#[0-9A-Fa-f]{6}$/)).length(6)
+).min(1).max(7);
+
 const updatePageSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   position: z.number().int().min(0).optional(),
+  palette: paletteSchema.nullable().optional(),
 });
 
 // Update page
 router.patch('/:id', validate(updatePageSchema), async (req, res) => {
   try {
+    const body = { ...req.body };
+    if (body.palette !== undefined) {
+      body.palette = body.palette === null ? null : JSON.stringify(body.palette);
+    }
     const [page] = await db.update(pages)
-      .set(req.body)
+      .set(body)
       .where(and(eq(pages.id, String(req.params.id)), eq(pages.userId, req.userId!)))
       .returning();
     if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
-    broadcast(req.userId!, 'page:updated', page);
-    res.json(page);
+    const parsed = { ...page, palette: page.palette ? JSON.parse(page.palette) : null };
+    broadcast(req.userId!, 'page:updated', parsed);
+    res.json(parsed);
   } catch (err) {
     console.error('Update page error:', err);
     res.status(500).json({ error: 'Server error' });

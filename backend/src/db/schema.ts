@@ -37,6 +37,7 @@ export const pages = pgTable('pages', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull().default('New Tracker'),
   position: integer('position').notNull().default(0),
+  palette: text('palette'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

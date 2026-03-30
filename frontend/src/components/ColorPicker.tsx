@@ -1,13 +1,18 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { PALETTE, COLORS, FONTS } from '../lib/theme';
+import { COLORS, FONTS } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
+  palette: string[][];
   selectedColor: string | null;
   onSelect: (color: string | null) => void;
+  onOpenPaletteConfig: () => void;
 }
 
-export default function ColorPicker({ selectedColor, onSelect }: Props) {
+export default function ColorPicker({ palette, selectedColor, onSelect, onOpenPaletteConfig }: Props) {
+  const { t } = useLanguage();
+
   return (
     <View style={styles.container}>
       {/* Eraser */}
@@ -20,11 +25,11 @@ export default function ColorPicker({ selectedColor, onSelect }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* Palette grid: 5 per row */}
+      {/* Palette grid: 6 per row */}
       <View style={styles.grid}>
-        {Array.from({ length: Math.ceil(PALETTE.length / 5) }, (_, row) => (
-          <View key={row} style={styles.gridRow}>
-            {PALETTE.slice(row * 5, row * 5 + 5).map(color => (
+        {palette.map((row, rowIdx) => (
+          <View key={rowIdx} style={styles.gridRow}>
+            {row.map(color => (
               <TouchableOpacity
                 key={color}
                 style={[
@@ -38,6 +43,11 @@ export default function ColorPicker({ selectedColor, onSelect }: Props) {
           </View>
         ))}
       </View>
+
+      {/* Edit palette button */}
+      <TouchableOpacity style={styles.editBtn} onPress={onOpenPaletteConfig}>
+        <Text style={styles.editBtnText}>{t('palette.edit')}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -81,5 +91,22 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.pixel,
     fontSize: 11,
     color: COLORS.textWarm,
+  },
+  editBtn: {
+    alignSelf: 'center',
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: COLORS.tabBorder,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+  },
+  editBtnText: {
+    fontFamily: FONTS.pixel,
+    fontSize: 8,
+    letterSpacing: 1,
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
   },
 });

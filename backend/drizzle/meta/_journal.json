@@ -15,6 +15,13 @@
       "when": 1774528533305,
       "tag": "0001_busy_machine_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774881737906,
+      "tag": "0002_unusual_photon",
+      "breakpoints": true
     }
   ]
 }

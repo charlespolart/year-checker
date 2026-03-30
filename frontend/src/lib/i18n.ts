@@ -42,6 +42,15 @@ const translations = {
     'tracker.loading': 'Chargement...',
     'tracker.pages': 'Pages',
 
+    // Palette
+    'palette.title': 'Modifier la palette',
+    'palette.edit': 'Modifier',
+    'palette.addRow': '+ Ajouter une ligne',
+    'palette.deleteRow': 'Supprimer la ligne',
+    'palette.deleteRowBlocked': 'Impossible de supprimer : des couleurs de cette ligne sont utilisées dans la grille ou les légendes.',
+    'palette.save': 'Enregistrer',
+    'palette.reset': 'Réinitialiser',
+
     // Settings
     'settings.title': 'Paramètres',
     'settings.language': 'Langue',
@@ -114,6 +123,15 @@ const translations = {
     'tracker.settings': 'Settings',
     'tracker.loading': 'Loading...',
     'tracker.pages': 'Pages',
+
+    // Palette
+    'palette.title': 'Edit Palette',
+    'palette.edit': 'Edit',
+    'palette.addRow': '+ Add Row',
+    'palette.deleteRow': 'Delete Row',
+    'palette.deleteRowBlocked': 'Cannot delete: colors from this row are used in the grid or legends.',
+    'palette.save': 'Save',
+    'palette.reset': 'Reset',
 
     // Settings
     'settings.title': 'Settings',
@@ -188,6 +206,15 @@ const translations = {
     'tracker.loading': '加载中...',
     'tracker.pages': '页面',
 
+    // Palette
+    'palette.title': '编辑调色板',
+    'palette.edit': '编辑',
+    'palette.addRow': '+ 添加一行',
+    'palette.deleteRow': '删除行',
+    'palette.deleteRowBlocked': '无法删除：此行的颜色已在网格或图例中使用。',
+    'palette.save': '保存',
+    'palette.reset': '重置',
+
     // Settings
     'settings.title': '设置',
     'settings.language': '语言',
@@ -260,6 +287,15 @@ const translations = {
     'tracker.settings': '設定',
     'tracker.loading': '載入中...',
     'tracker.pages': '頁面',
+
+    // Palette
+    'palette.title': '編輯調色盤',
+    'palette.edit': '編輯',
+    'palette.addRow': '+ 新增一列',
+    'palette.deleteRow': '刪除列',
+    'palette.deleteRowBlocked': '無法刪除：此列的顏色已在網格或圖例中使用。',
+    'palette.save': '儲存',
+    'palette.reset': '重置',
 
     // Settings
     'settings.title': '設定',
