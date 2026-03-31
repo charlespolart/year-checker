@@ -9,27 +9,37 @@ const VOLUME = 0.3;
 
 let audioCtx: AudioContext | null = null;
 let audioBuffer: AudioBuffer | null = null;
-let bufferLoading = false;
+let initialized = false;
 
-async function ensureBuffer() {
-  // Create AudioContext on first user gesture
-  if (!audioCtx) {
+// Initialize AudioContext on first user interaction (any touch/click on the page)
+function initOnFirstInteraction() {
+  if (initialized || Platform.OS !== 'web') return;
+  initialized = true;
+
+  const init = () => {
+    document.removeEventListener('touchstart', init, true);
+    document.removeEventListener('mousedown', init, true);
+
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    await audioCtx.resume();
-  }
-  if (audioBuffer || bufferLoading) return;
-  bufferLoading = true;
-  try {
+
     const src = typeof tapSrc === 'string' ? tapSrc :
       (tapSrc as any)?.default ?? (tapSrc as any)?.uri ?? '';
     if (!src) return;
-    const response = await fetch(src);
-    const arrayBuffer = await response.arrayBuffer();
-    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-  } catch { /* ignore */ }
-  bufferLoading = false;
+
+    fetch(src)
+      .then(r => r.arrayBuffer())
+      .then(buf => audioCtx!.decodeAudioData(buf))
+      .then(decoded => { audioBuffer = decoded; })
+      .catch(() => {});
+  };
+
+  document.addEventListener('touchstart', init, { capture: true, once: true });
+  document.addEventListener('mousedown', init, { capture: true, once: true });
+}
+
+// Call immediately at module load on web
+if (Platform.OS === 'web') {
+  initOnFirstInteraction();
 }
 
 export function useTapSound() {
@@ -38,8 +48,8 @@ export function useTapSound() {
   const play = useCallback(async () => {
     try {
       if (Platform.OS === 'web') {
-        await ensureBuffer();
         if (!audioBuffer || !audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const source = audioCtx.createBufferSource();
         source.buffer = audioBuffer;
         const gain = audioCtx.createGain();
