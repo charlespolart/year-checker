@@ -27,37 +27,30 @@ echo ""
 echo "=== Pulling latest code ==="
 git pull origin master
 
-# ── Stop service ──
-echo ""
-echo "=== Stopping service ==="
-sudo systemctl stop $SERVICE_NAME 2>/dev/null || true
-
-# ── Backend ──
+# ── Build everything while service is still running ──
 echo ""
 echo "=== Building backend ==="
 cd "$BACKEND_DIR"
 npm ci
 npm run build
 
-# ── Database migrations ──
 echo ""
 echo "=== Running migrations ==="
 $NPX_PATH drizzle-kit migrate
 
-# Remove devDependencies for production
 npm prune --omit=dev
 
-# ── Frontend ──
 echo ""
 echo "=== Building frontend ==="
 cd "$FRONTEND_DIR"
 npm ci
 $NPX_PATH expo export --platform web
 
-# ── Systemd service ──
+# ── Quick restart — service is down for ~1 second ──
 echo ""
-echo "=== Setting up service ==="
-cat <<EOF | sudo tee $SERVICE_FILE
+echo "=== Restarting service ==="
+
+cat <<EOF | sudo tee $SERVICE_FILE > /dev/null
 [Unit]
 Description=Dian Dian API + Frontend
 After=network.target postgresql.service
@@ -77,7 +70,7 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable $SERVICE_NAME
-sudo systemctl start $SERVICE_NAME
+sudo systemctl restart $SERVICE_NAME
 
 echo ""
 echo "=== Deploy complete ==="
