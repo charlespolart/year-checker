@@ -93,6 +93,35 @@ router.delete('/:pageId', validate(deleteCellSchema), async (req, res) => {
   }
 });
 
+// Recolor: batch update colors
+const recolorSchema = z.object({
+  colorMap: z.record(z.string().regex(/^#[0-9A-Fa-f]{6}$/), z.string().regex(/^#[0-9A-Fa-f]{6}$/)),
+});
+
+router.patch('/:pageId/recolor', validate(recolorSchema), async (req, res) => {
+  try {
+    const pageId = String(req.params.pageId);
+    const [page] = await db.select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.id, pageId), eq(pages.userId, req.userId!)))
+      .limit(1);
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
+
+    const { colorMap } = req.body;
+    for (const [oldColor, newColor] of Object.entries(colorMap)) {
+      await db.update(cells)
+        .set({ color: newColor as string, updatedAt: new Date() })
+        .where(and(eq(cells.pageId, pageId), eq(cells.color, oldColor)));
+    }
+
+    broadcast(req.userId!, 'cells:recolored', { pageId, colorMap });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Recolor cells error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Delete all cells for a page (reset)
 router.delete('/:pageId/all', async (req, res) => {
   try {

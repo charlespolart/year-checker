@@ -50,6 +50,14 @@ export function useCells(pageId: string | null) {
         case 'cells:reset':
           if (data.pageId === pageId) setCells([]);
           break;
+        case 'cells:recolored':
+          if (data.pageId === pageId && data.colorMap) {
+            setCells(prev => prev.map(c => {
+              const newColor = data.colorMap[c.color.toUpperCase()] || data.colorMap[c.color];
+              return newColor ? { ...c, color: newColor } : c;
+            }));
+          }
+          break;
       }
     });
   }, [pageId]);

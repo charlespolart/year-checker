@@ -9,7 +9,7 @@ interface Props {
   palette: string[][];
   cells: Cell[];
   legends: Legend[];
-  onSave: (palette: string[][] | null) => void;
+  onSave: (palette: string[][] | null, colorMap: Record<string, string>) => void;
   onClose: () => void;
 }
 
@@ -32,11 +32,27 @@ function isValidHex(s: string): boolean {
 export default function PaletteEditor({ palette, cells, legends, onSave, onClose }: Props) {
   const { t } = useLanguage();
   const [rows, setRows] = useState<string[][]>(() => palette.map(r => [...r]));
+  const originalPalette = useRef(palette.map(r => [...r]));
+  const colorMapRef = useRef<Record<string, string>>({});
   const [editingColor, setEditingColor] = useState<{ row: number; col: number } | null>(null);
   const [hexInput, setHexInput] = useState('');
   const [rInput, setRInput] = useState('');
   const [gInput, setGInput] = useState('');
   const [bInput, setBInput] = useState('');
+
+  const trackColorChange = (row: number, col: number, newColor: string) => {
+    const origRow = originalPalette.current[row];
+    if (!origRow) return;
+    const origColor = origRow[col];
+    if (!origColor) return;
+    const upper = origColor.toUpperCase();
+    const newUpper = newColor.toUpperCase();
+    if (upper !== newUpper) {
+      colorMapRef.current[upper] = newUpper;
+    } else {
+      delete colorMapRef.current[upper];
+    }
+  };
 
   const openColorEditor = (row: number, col: number) => {
     const color = rows[row][col];
@@ -56,9 +72,11 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
       setGInput(String(g));
       setBInput(String(b));
       if (editingColor) {
+        const newHex = hex.toUpperCase();
+        trackColorChange(editingColor.row, editingColor.col, newHex);
         setRows(prev => {
           const next = prev.map(r => [...r]);
-          next[editingColor.row][editingColor.col] = hex.toUpperCase();
+          next[editingColor.row][editingColor.col] = newHex;
           return next;
         });
       }
@@ -76,6 +94,7 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
       const hex = rgbToHex(r, g, b);
       setHexInput(hex);
       if (editingColor) {
+        trackColorChange(editingColor.row, editingColor.col, hex);
         setRows(prev => {
           const next = prev.map(r => [...r]);
           next[editingColor.row][editingColor.col] = hex;
@@ -130,7 +149,7 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
   };
 
   const handleSave = () => {
-    onSave(rows);
+    onSave(rows, colorMapRef.current);
     onClose();
   };
 

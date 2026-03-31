@@ -76,6 +76,35 @@ router.put('/:pageId/reorder', validate(reorderSchema), async (req, res) => {
   }
 });
 
+// Recolor legends
+const recolorLegendSchema = z.object({
+  colorMap: z.record(z.string().regex(/^#[0-9A-Fa-f]{6}$/), z.string().regex(/^#[0-9A-Fa-f]{6}$/)),
+});
+
+router.patch('/:pageId/recolor', validate(recolorLegendSchema), async (req, res) => {
+  try {
+    const pageId = String(req.params.pageId);
+    const [page] = await db.select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.id, pageId), eq(pages.userId, req.userId!)))
+      .limit(1);
+    if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
+
+    const { colorMap } = req.body;
+    for (const [oldColor, newColor] of Object.entries(colorMap)) {
+      await db.update(legends)
+        .set({ color: newColor as string })
+        .where(and(eq(legends.pageId, pageId), eq(legends.color, oldColor)));
+    }
+
+    broadcast(req.userId!, 'legends:recolored', { pageId, colorMap });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Recolor legends error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Delete legend
 router.delete('/:id', async (req, res) => {
   try {

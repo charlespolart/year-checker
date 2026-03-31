@@ -55,6 +55,14 @@ export function useLegends(pageId: string | null) {
             setLegends(prev => prev.filter(l => l.id !== data.id));
           }
           break;
+        case 'legends:recolored':
+          if (data.pageId === pageId && data.colorMap) {
+            setLegends(prev => prev.map(l => {
+              const newColor = data.colorMap[l.color.toUpperCase()] || data.colorMap[l.color];
+              return newColor ? { ...l, color: newColor } : l;
+            }));
+          }
+          break;
       }
     });
   }, [pageId]);

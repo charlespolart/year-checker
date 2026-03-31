@@ -17,6 +17,7 @@ import LegendList from '../components/LegendList';
 import PageTabs from '../components/PageTabs';
 import SideMenu from '../components/SideMenu';
 import Stats from '../components/Stats';
+import { apiFetch } from '../lib/api';
 import { COLORS, FONTS, DEFAULT_PALETTE } from '../lib/theme';
 
 interface Props {
@@ -315,13 +316,28 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
           palette={currentPalette}
           cells={cells}
           legends={legends}
-          onSave={(palette) => {
+          onSave={async (palette, colorMap) => {
             const isDefault = JSON.stringify(palette) === JSON.stringify(DEFAULT_PALETTE);
             updatePage(currentPageId, { palette: isDefault ? null : palette });
+
+            // Recolor cells and legends if colors changed
+            if (Object.keys(colorMap).length > 0) {
+              await apiFetch(`/cells/${currentPageId}/recolor`, {
+                method: 'PATCH',
+                body: JSON.stringify({ colorMap }),
+              });
+              await apiFetch(`/legends/${currentPageId}/recolor`, {
+                method: 'PATCH',
+                body: JSON.stringify({ colorMap }),
+              });
+            }
+
             // Reset selected color if it's no longer in the new palette
             if (palette && selectedColor) {
+              const newColor = colorMap[selectedColor.toUpperCase()] || selectedColor;
               const flat = palette.flat();
-              if (!flat.includes(selectedColor)) setSelectedColor(palette[0]?.[0] || null);
+              if (!flat.includes(newColor)) setSelectedColor(palette[0]?.[0] || null);
+              else setSelectedColor(newColor);
             }
           }}
           onClose={() => setPaletteEditorOpen(false)}
