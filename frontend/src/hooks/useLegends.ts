@@ -83,5 +83,13 @@ export function useLegends(pageId: string | null) {
     if (!res.ok) throw new Error('Request failed');
   }, []);
 
-  return { legends, loading, createLegend, deleteLegend, refetch: fetchLegends };
+  const reorderLegends = useCallback(async (ids: string[]) => {
+    if (!pageId) return;
+    await apiFetch(`/legends/${pageId}/reorder`, {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    });
+  }, [pageId]);
+
+  return { legends, loading, createLegend, deleteLegend, reorderLegends, refetch: fetchLegends };
 }

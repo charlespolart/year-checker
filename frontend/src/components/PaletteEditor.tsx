@@ -36,6 +36,8 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
   const originalPalette = useRef(palette.map(r => [...r]));
   const colorMapRef = useRef<Record<string, string>>({});
   const [editingColor, setEditingColor] = useState<{ row: number; col: number } | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [hexInput, setHexInput] = useState('');
   const [rInput, setRInput] = useState('');
   const [gInput, setGInput] = useState('');
@@ -171,6 +173,37 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
     }
   };
 
+  const handleRowDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    setRows(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIdx, 1);
+      next.splice(toIdx, 0, moved);
+      scheduleAutoSave(next);
+      return next;
+    });
+    // Update editingColor index
+    if (editingColor) {
+      let newRow = editingColor.row;
+      if (editingColor.row === dragIdx) newRow = toIdx;
+      else if (dragIdx < editingColor.row && toIdx >= editingColor.row) newRow--;
+      else if (dragIdx > editingColor.row && toIdx <= editingColor.row) newRow++;
+      if (newRow !== editingColor.row) setEditingColor({ ...editingColor, row: newRow });
+    }
+    // Update originalPalette ref to match new order
+    const origNext = [...originalPalette.current];
+    const [origMoved] = origNext.splice(dragIdx, 1);
+    origNext.splice(toIdx, 0, origMoved);
+    originalPalette.current = origNext;
+
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
   const handleClose = () => {
     // Flush pending save
     if (saveTimer.current) {
@@ -194,8 +227,12 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {rows.map((row, rowIdx) => (
-            <View key={rowIdx} style={styles.rowContainer}>
+          {rows.map((row, rowIdx) => {
+            const isDragging = dragIdx === rowIdx;
+            const isDragOver = dragOverIdx === rowIdx;
+            const rowContent = (
+            <View key={rowIdx} style={[styles.rowContainer, isDragging && styles.rowDragging, isDragOver && styles.rowDragOver]}>
+              <Text style={styles.dragHandle}>☰</Text>
               <View style={styles.swatchRow}>
                 {row.map((color, colIdx) => (
                   <TouchableOpacity
@@ -215,7 +252,25 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
                 </TouchableOpacity>
               )}
             </View>
-          ))}
+            );
+            if (Platform.OS === 'web') {
+              return (
+                <div
+                  key={rowIdx}
+                  draggable
+                  onDragStart={() => setDragIdx(rowIdx)}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverIdx(rowIdx); }}
+                  onDragLeave={() => { if (dragOverIdx === rowIdx) setDragOverIdx(null); }}
+                  onDrop={() => handleRowDrop(rowIdx)}
+                  onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
+                  style={{ cursor: 'grab' }}
+                >
+                  {rowContent}
+                </div>
+              );
+            }
+            return rowContent;
+          })}
 
           {rows.length < MAX_ROWS && (
             <TouchableOpacity style={styles.addRowBtn} onPress={addRow}>
@@ -340,7 +395,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    gap: 8,
+    gap: 6,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+  },
+  rowDragging: {
+    opacity: 0.4,
+  },
+  rowDragOver: {
+    borderColor: COLORS.tabActiveBorder,
+    backgroundColor: COLORS.tabActive,
+  },
+  dragHandle: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    opacity: 0.5,
   },
   swatchRow: {
     flexDirection: 'row',

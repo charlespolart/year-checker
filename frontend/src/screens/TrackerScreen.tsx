@@ -83,7 +83,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
     : pages[0]?.id ?? null;
 
   const { cells, getCellColor, setCell, deleteCell, resetAll } = useCells(currentPageId);
-  const { legends, createLegend, deleteLegend } = useLegends(currentPageId);
+  const { legends, createLegend, deleteLegend, reorderLegends } = useLegends(currentPageId);
 
   const currentPage = pages.find(p => p.id === currentPageId);
   const currentPalette = currentPage?.palette || DEFAULT_PALETTE;
@@ -360,6 +360,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
             const matching = cells.filter(c => c.color.toUpperCase() === color.toUpperCase());
             await Promise.all(matching.map(c => deleteCell(c.month, c.day)));
           }}
+          onReorderLegends={reorderLegends}
           onOpenPaletteConfig={() => { setLegendEditorOpen(false); setPaletteEditorOpen(true); }}
           onClose={() => setLegendEditorOpen(false)}
         />
@@ -570,17 +571,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   legendEditBtn: {
-    paddingVertical: 6,
-    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 1,
     borderColor: COLORS.tabBorder,
+    borderRadius: 8,
     borderStyle: 'dashed',
-    alignItems: 'center',
-    marginTop: 4,
   },
   legendEditBtnText: {
     fontFamily: FONTS.pixel,
-    fontSize: 9,
+    fontSize: 8,
     letterSpacing: 1,
     color: COLORS.textMuted,
     textTransform: 'uppercase',

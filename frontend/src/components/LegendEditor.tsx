@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Pressable, Platform } from 'react-native';
 import { COLORS, FONTS } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useConfirm } from '../hooks/useConfirm';
@@ -14,16 +14,19 @@ interface Props {
   brushColor: string | null;
   onCreateLegend: (color: string, label: string) => Promise<any>;
   onDeleteLegend: (id: string, color: string) => Promise<void>;
+  onReorderLegends: (ids: string[]) => Promise<void>;
   onOpenPaletteConfig: () => void;
   onClose: () => void;
 }
 
-export default function LegendEditor({ legends, cells, palette, brushColor, onCreateLegend, onDeleteLegend, onOpenPaletteConfig, onClose }: Props) {
+export default function LegendEditor({ legends, cells, palette, brushColor, onCreateLegend, onDeleteLegend, onReorderLegends, onOpenPaletteConfig, onClose }: Props) {
   const { t } = useLanguage();
   const confirmDialog = useConfirm();
   const [pickerColor, setPickerColor] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState('');
   const [adding, setAdding] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const handleAdd = async () => {
     if (!pickerColor || !newLabel.trim()) return;
@@ -37,15 +40,31 @@ export default function LegendEditor({ legends, cells, palette, brushColor, onCr
 
   const handleDelete = async (legend: Legend) => {
     const usedInGrid = cells.some(c => c.color.toUpperCase() === legend.color.toUpperCase());
-    const msg = usedInGrid ? t('tracker.deleteLegendConfirm') : t('tracker.deleteLegendConfirmSimple');
-    const ok = await confirmDialog({
-      title: t('common.delete'),
-      message: msg,
-      confirmText: t('common.delete'),
-      cancelText: t('common.cancel'),
-      destructive: true,
-    });
-    if (ok) onDeleteLegend(legend.id, legend.color);
+    if (usedInGrid) {
+      const ok = await confirmDialog({
+        title: t('common.delete'),
+        message: t('tracker.deleteLegendConfirm'),
+        confirmText: t('common.delete'),
+        cancelText: t('common.cancel'),
+        destructive: true,
+      });
+      if (!ok) return;
+    }
+    onDeleteLegend(legend.id, legend.color);
+  };
+
+  const handleDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    const reordered = [...legends];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    onReorderLegends(reordered.map(l => l.id));
+    setDragIdx(null);
+    setDragOverIdx(null);
   };
 
   return (
@@ -60,17 +79,48 @@ export default function LegendEditor({ legends, cells, palette, brushColor, onCr
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Existing legends */}
+          {/* Existing legends with drag & drop */}
           <View style={styles.legendsList}>
-            {legends.map(legend => (
-              <View key={legend.id} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: legend.color }]} />
-                <Text style={styles.legendLabel} numberOfLines={1}>{legend.label}</Text>
-                <TouchableOpacity onPress={() => handleDelete(legend)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.deleteText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            {legends.map((legend, idx) => {
+              const isDragging = dragIdx === idx;
+              const isDragOver = dragOverIdx === idx;
+
+              const item = (
+                <View
+                  key={legend.id}
+                  style={[
+                    styles.legendItem,
+                    isDragging && styles.legendItemDragging,
+                    isDragOver && styles.legendItemDragOver,
+                  ]}
+                >
+                  <Text style={styles.dragHandle}>☰</Text>
+                  <View style={[styles.legendDot, { backgroundColor: legend.color }]} />
+                  <Text style={styles.legendLabel} numberOfLines={1}>{legend.label}</Text>
+                  <TouchableOpacity onPress={() => handleDelete(legend)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={styles.deleteText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+
+              if (Platform.OS === 'web') {
+                return (
+                  <div
+                    key={legend.id}
+                    draggable
+                    onDragStart={() => setDragIdx(idx)}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+                    onDragLeave={() => { if (dragOverIdx === idx) setDragOverIdx(null); }}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
+                    style={{ cursor: 'grab' }}
+                  >
+                    {item}
+                  </div>
+                );
+              }
+              return item;
+            })}
             {legends.length === 0 && (
               <Text style={styles.emptyText}>{t('tracker.noLegends')}</Text>
             )}
@@ -164,6 +214,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
     backgroundColor: 'rgba(0,0,0,0.02)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  legendItemDragging: {
+    opacity: 0.4,
+  },
+  legendItemDragOver: {
+    borderColor: COLORS.tabActiveBorder,
+    backgroundColor: COLORS.tabActive,
+  },
+  dragHandle: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    opacity: 0.5,
   },
   legendDot: {
     width: 16,

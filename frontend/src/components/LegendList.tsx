@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { COLORS, FONTS } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { Legend } from '../hooks/useLegends';
@@ -12,12 +12,14 @@ interface Props {
 
 export default function LegendList({ legends, brushColor, onSelectLegend }: Props) {
   const { t } = useLanguage();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
 
   return (
-    <View style={styles.container}>
-      {/* Eraser */}
+    <View style={styles.wrapper}>
+      {/* Eraser — always on top, centered on mobile */}
       <TouchableOpacity
-        style={[styles.legendItem, brushColor === null && styles.legendItemSelected]}
+        style={[styles.legendItem, isMobile && styles.legendItemEraserMobile, brushColor === null && styles.legendItemSelected]}
         onPress={() => onSelectLegend('__eraser__')}
         activeOpacity={0.7}
       >
@@ -25,28 +27,35 @@ export default function LegendList({ legends, brushColor, onSelectLegend }: Prop
         <Text style={[styles.legendLabel, brushColor === null && styles.legendLabelSelected]}>{t('tracker.eraser')}</Text>
       </TouchableOpacity>
 
-      {/* Legends */}
-      {legends.map(legend => {
-        const isSelected = brushColor?.toUpperCase() === legend.color.toUpperCase();
-        return (
-          <TouchableOpacity
-            key={legend.id}
-            style={[styles.legendItem, isSelected && styles.legendItemSelected]}
-            onPress={() => onSelectLegend(legend.color)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.legendDot, { backgroundColor: legend.color }, isSelected && styles.legendDotSelected]} />
-            <Text style={[styles.legendLabel, isSelected && styles.legendLabelSelected]} numberOfLines={1}>{legend.label}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      {/* Legends — 2 columns on mobile */}
+      <View style={styles.container}>
+        {legends.map(legend => {
+          const isSelected = brushColor?.toUpperCase() === legend.color.toUpperCase();
+          return (
+            <TouchableOpacity
+              key={legend.id}
+              style={[styles.legendItem, isMobile && styles.legendItemHalf, isSelected && styles.legendItemSelected]}
+              onPress={() => onSelectLegend(legend.color)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.legendDot, { backgroundColor: legend.color }, isSelected && styles.legendDotSelected]} />
+              <Text style={[styles.legendLabel, isSelected && styles.legendLabelSelected]} numberOfLines={1}>{legend.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    gap: 3,
+  },
   container: {
     gap: 3,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   legendItem: {
     flexDirection: 'row',
@@ -57,6 +66,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
+  },
+  legendItemEraserMobile: {
+    alignSelf: 'center',
+  },
+  legendItemHalf: {
+    width: '48%',
   },
   legendItemSelected: {
     backgroundColor: COLORS.tabActive,
