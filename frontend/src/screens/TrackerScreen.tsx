@@ -31,7 +31,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const { pages, createPage, updatePage, deletePage } = usePages();
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [brushColor, setBrushColor] = useState<string | null>(null); // from legend selection
-  const [pickerColor, setPickerColor] = useState<string | null>(DEFAULT_PALETTE[0][0]); // for legend creation
+  const [pickerColor, setPickerColor] = useState<string | null>(null); // for legend creation
   const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -209,15 +209,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
             <Text style={styles.sidebarTitle}>{t('tracker.colors')}</Text>
             <ColorPicker palette={currentPalette} selectedColor={pickerColor} onSelect={setPickerColor} onOpenPaletteConfig={() => setPaletteEditorOpen(true)} />
 
-            <View style={styles.legendHeader}>
-              <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
-              <TouchableOpacity
-                style={[styles.eraserBtn, brushColor === null && styles.eraserBtnActive]}
-                onPress={() => setBrushColor(null)}
-              >
-                <Text style={[styles.eraserBtnText, brushColor === null && styles.eraserBtnTextActive]}>✕</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
             <LegendList
               legends={legends}
               pickerColor={pickerColor}
@@ -563,32 +555,6 @@ const styles = StyleSheet.create({
     gap: 6,
     alignItems: 'center',
     paddingHorizontal: 8,
-  },
-  legendHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  eraserBtn: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: COLORS.tabBorder,
-    borderStyle: 'dashed',
-  },
-  eraserBtnActive: {
-    backgroundColor: COLORS.tabActive,
-    borderColor: COLORS.tabActiveBorder,
-    borderStyle: 'solid',
-  },
-  eraserBtnText: {
-    fontFamily: FONTS.pixel,
-    fontSize: 9,
-    color: COLORS.textMuted,
-  },
-  eraserBtnTextActive: {
-    color: COLORS.accent,
   },
   sidebarVertical: {
     width: 160,

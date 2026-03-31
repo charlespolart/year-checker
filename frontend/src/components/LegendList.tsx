@@ -65,7 +65,7 @@ export default function LegendList({ legends, pickerColor, brushColor, onSelectL
       {/* Add legend input */}
       <View style={styles.inputRow}>
         <TextInput
-          style={[styles.input, pickerColor ? { borderLeftWidth: 6, borderLeftColor: pickerColor } : null]}
+          style={[styles.input, pickerColor ? { borderLeftWidth: 5, borderLeftColor: pickerColor } : null]}
           placeholder={t('tracker.legendPlaceholder')}
           placeholderTextColor="#b0a890"
           value={newLabel}
