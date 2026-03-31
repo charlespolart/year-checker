@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   legendItemEraserMobile: {
-    alignSelf: 'center',
+    width: '48%',
   },
   legendItemHalf: {
     width: '48%',
