@@ -11,8 +11,8 @@ import { useLegends } from '../hooks/useLegends';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import TrackerGrid from '../components/TrackerGrid';
-import ColorPicker from '../components/ColorPicker';
 import PaletteEditor from '../components/PaletteEditor';
+import LegendEditor from '../components/LegendEditor';
 import LegendList from '../components/LegendList';
 import PageTabs from '../components/PageTabs';
 import SideMenu from '../components/SideMenu';
@@ -30,9 +30,9 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const [verificationSent, setVerificationSent] = useState(false);
   const { pages, createPage, updatePage, deletePage } = usePages();
   const [activePageId, setActivePageId] = useState<string | null>(null);
-  const [brushColor, setBrushColor] = useState<string | null>(null); // from legend selection
-  const [pickerColor, setPickerColor] = useState<string | null>(null); // for legend creation
+  const [brushColor, setBrushColor] = useState<string | null>(null);
   const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
+  const [legendEditorOpen, setLegendEditorOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { width, height } = useWindowDimensions();
@@ -206,24 +206,18 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
 
         <View style={[styles.trackerLayout, width >= 768 && styles.trackerLayoutRow]}>
           <View style={[styles.sidebar, width >= 768 && [styles.sidebarVertical, { width: SIDEBAR_W }]]}>
-            <Text style={styles.sidebarTitle}>{t('tracker.colors')}</Text>
-            <ColorPicker palette={currentPalette} selectedColor={pickerColor} onSelect={setPickerColor} onOpenPaletteConfig={() => setPaletteEditorOpen(true)} />
-
-            <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
+            <View style={styles.legendHeaderRow}>
+              <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
+              <TouchableOpacity style={styles.legendEditBtn} onPress={() => setLegendEditorOpen(true)}>
+                <Text style={styles.legendEditBtnText}>{t('tracker.editLegends')}</Text>
+              </TouchableOpacity>
+            </View>
             <LegendList
               legends={legends}
-              pickerColor={pickerColor}
               brushColor={brushColor}
               onSelectLegend={(color) => {
                 if (color === '__eraser__') setBrushColor(null);
                 else setBrushColor(prev => prev === color ? null : color);
-              }}
-              onCreateLegend={createLegend}
-              onDeleteLegend={async (id, color) => {
-                await deleteLegend(id);
-                if (brushColor?.toUpperCase() === color.toUpperCase()) setBrushColor(null);
-                const matching = cells.filter(c => c.color.toUpperCase() === color.toUpperCase());
-                await Promise.all(matching.map(c => deleteCell(c.month, c.day)));
               }}
             />
 
@@ -352,6 +346,24 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
             }
           }}
           onClose={() => setPaletteEditorOpen(false)}
+        />
+      )}
+
+      {legendEditorOpen && currentPageId && (
+        <LegendEditor
+          legends={legends}
+          cells={cells}
+          palette={currentPalette}
+          brushColor={brushColor}
+          onCreateLegend={createLegend}
+          onDeleteLegend={async (id, color) => {
+            await deleteLegend(id);
+            if (brushColor?.toUpperCase() === color.toUpperCase()) setBrushColor(null);
+            const matching = cells.filter(c => c.color.toUpperCase() === color.toUpperCase());
+            await Promise.all(matching.map(c => deleteCell(c.month, c.day)));
+          }}
+          onOpenPaletteConfig={() => { setLegendEditorOpen(false); setPaletteEditorOpen(true); }}
+          onClose={() => setLegendEditorOpen(false)}
         />
       )}
     </SafeContainer>
@@ -558,6 +570,25 @@ const styles = StyleSheet.create({
     gap: 6,
     alignItems: 'center',
     paddingHorizontal: 8,
+  },
+  legendHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  legendEditBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: COLORS.tabBorder,
+  },
+  legendEditBtnText: {
+    fontFamily: FONTS.pixel,
+    fontSize: 7,
+    letterSpacing: 1,
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
   },
   sidebarVertical: {
     width: 160,
