@@ -62,24 +62,40 @@ export function useCells(pageId: string | null) {
     });
   }, [pageId]);
 
-  const setCell = useCallback(async (month: number, day: number, color: string) => {
+  const setCell = useCallback((month: number, day: number, color: string) => {
     if (!pageId) return;
-    const res = await apiFetch(`/cells/${pageId}`, {
+    // Optimistic update
+    const prev = cells.find(c => c.month === month && c.day === day);
+    setCells(old => {
+      const idx = old.findIndex(c => c.month === month && c.day === day);
+      const cell = { pageId, month, day, color, updatedAt: new Date().toISOString() };
+      if (idx >= 0) return old.map((c, i) => i === idx ? cell : c);
+      return [...old, cell];
+    });
+    // Send request in background, revert on failure
+    apiFetch(`/cells/${pageId}`, {
       method: 'PUT',
       body: JSON.stringify({ month, day, color }),
+    }).catch(() => {
+      // Revert
+      if (prev) setCells(old => old.map(c => (c.month === month && c.day === day) ? prev : c));
+      else setCells(old => old.filter(c => !(c.month === month && c.day === day)));
     });
-    if (!res.ok) throw new Error('Request failed');
-    if (!res.ok) throw new Error('Request failed');
-    return res.json();
-  }, [pageId]);
+  }, [pageId, cells]);
 
-  const deleteCell = useCallback(async (month: number, day: number) => {
+  const deleteCell = useCallback((month: number, day: number) => {
     if (!pageId) return;
-    await apiFetch(`/cells/${pageId}`, {
+    // Optimistic update
+    const prev = cells.find(c => c.month === month && c.day === day);
+    setCells(old => old.filter(c => !(c.month === month && c.day === day)));
+    // Send request in background, revert on failure
+    apiFetch(`/cells/${pageId}`, {
       method: 'DELETE',
       body: JSON.stringify({ month, day }),
+    }).catch(() => {
+      if (prev) setCells(old => [...old, prev]);
     });
-  }, [pageId]);
+  }, [pageId, cells]);
 
   const resetAll = useCallback(async () => {
     if (!pageId) return;
