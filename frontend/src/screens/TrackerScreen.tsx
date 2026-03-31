@@ -570,9 +570,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   eraserBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
     borderWidth: 1,
     borderColor: COLORS.tabBorder,
     borderStyle: 'dashed',

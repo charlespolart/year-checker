@@ -83,6 +83,7 @@ export default function LegendList({ legends, pickerColor, brushColor, onSelectL
 const styles = StyleSheet.create({
   container: {
     gap: 4,
+    overflow: 'hidden',
   },
   legends: {
     gap: 3,
@@ -134,6 +135,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     fontFamily: FONTS.dot,
     fontSize: 12,
     borderWidth: 2,
@@ -149,14 +151,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.btnAddBorder,
     borderRadius: 8,
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addBtnText: {
-    fontFamily: FONTS.pixel,
-    fontSize: 14,
+    fontSize: 18,
     color: COLORS.btnAddText,
+    lineHeight: 20,
   },
 });
