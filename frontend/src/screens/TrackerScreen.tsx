@@ -17,6 +17,7 @@ import LegendList from '../components/LegendList';
 import PageTabs from '../components/PageTabs';
 import SideMenu from '../components/SideMenu';
 import Stats from '../components/Stats';
+import { useTapSound } from '../hooks/useTapSound';
 import { apiFetch } from '../lib/api';
 import { useConfirm } from '../hooks/useConfirm';
 import { COLORS, FONTS, DEFAULT_PALETTE } from '../lib/theme';
@@ -33,6 +34,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [brushColor, setBrushColor] = useState<string | null>(null);
   const confirm = useConfirm();
+  const playTap = useTapSound();
   const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
   const [legendEditorOpen, setLegendEditorOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -89,12 +91,13 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const currentPalette = currentPage?.palette || DEFAULT_PALETTE;
 
   const handleCellPress = useCallback((month: number, day: number) => {
+    playTap();
     if (brushColor) {
       setCell(month, day, brushColor);
     } else {
       deleteCell(month, day);
     }
-  }, [brushColor, setCell, deleteCell]);
+  }, [brushColor, setCell, deleteCell, playTap]);
 
   const handleAddPage = useCallback(async () => {
     const page = await createPage();
