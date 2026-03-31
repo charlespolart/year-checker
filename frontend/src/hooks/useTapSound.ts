@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { Audio } from 'expo-av';
 
 const tapSrc = require('../../assets/dot-tap.mp3');
+const WEB_TAP_URL = '/dot-tap.mp3'; // served from public/
 
 const SKIP_START = 0.07;
 const VOLUME = 0.3;
@@ -26,11 +27,7 @@ function getContext(): AudioContext {
 async function loadBuffer(): Promise<void> {
   if (decodedBuffer) return;
   const audioCtx = getContext();
-  const src = typeof tapSrc === 'string'
-    ? tapSrc
-    : (tapSrc as any)?.default ?? (tapSrc as any)?.uri ?? '';
-  if (!src) return;
-  const response = await fetch(src);
+  const response = await fetch(WEB_TAP_URL);
   const arrayBuffer = await response.arrayBuffer();
   decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 }
