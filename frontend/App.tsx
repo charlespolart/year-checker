@@ -6,6 +6,7 @@ import { useFonts, Silkscreen_400Regular, Silkscreen_700Bold } from '@expo-googl
 import { DotGothic16_400Regular } from '@expo-google-fonts/dotgothic16';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
+import { ConfirmProvider } from './src/hooks/useConfirm';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import TrackerScreen from './src/screens/TrackerScreen';
@@ -100,9 +101,11 @@ export default function App() {
     <DottedBackground>
       <LanguageProvider>
         <AuthProvider>
-          <StatusBar style="dark" />
-          <CustomCursor />
-          <AppContent />
+          <ConfirmProvider>
+            <StatusBar style="dark" />
+            <CustomCursor />
+            <AppContent />
+          </ConfirmProvider>
         </AuthProvider>
       </LanguageProvider>
     </DottedBackground>

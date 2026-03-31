@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, StyleSheet, Alert, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SafeContainer = Platform.OS === 'web'
@@ -18,6 +18,7 @@ import PageTabs from '../components/PageTabs';
 import SideMenu from '../components/SideMenu';
 import Stats from '../components/Stats';
 import { apiFetch } from '../lib/api';
+import { useConfirm } from '../hooks/useConfirm';
 import { COLORS, FONTS, DEFAULT_PALETTE } from '../lib/theme';
 
 interface Props {
@@ -31,6 +32,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const { pages, createPage, updatePage, deletePage } = usePages();
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [brushColor, setBrushColor] = useState<string | null>(null);
+  const confirm = useConfirm();
   const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
   const [legendEditorOpen, setLegendEditorOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -100,31 +102,29 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   }, [createPage]);
 
   const handleDeletePage = useCallback(async (id: string) => {
-    const doDelete = async () => {
+    const ok = await confirm({
+      title: t('common.delete'),
+      message: t('tracker.deletePageConfirm'),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
+      destructive: true,
+    });
+    if (ok) {
       await deletePage(id);
       if (currentPageId === id) setActivePageId(null);
-    };
-    if (Platform.OS === 'web') {
-      if (confirm(t('tracker.deletePageConfirm'))) doDelete();
-    } else {
-      Alert.alert(t('common.delete'), t('tracker.deletePageConfirm'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: doDelete },
-      ]);
     }
-  }, [deletePage, currentPageId]);
+  }, [deletePage, currentPageId, confirm, t]);
 
-  const handleResetAll = useCallback(() => {
-    const doReset = () => resetAll();
-    if (Platform.OS === 'web') {
-      if (confirm(t('tracker.resetConfirm'))) doReset();
-    } else {
-      Alert.alert(t('tracker.resetAll'), t('tracker.resetConfirm'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.erase'), style: 'destructive', onPress: doReset },
-      ]);
-    }
-  }, [resetAll]);
+  const handleResetAll = useCallback(async () => {
+    const ok = await confirm({
+      title: t('tracker.resetAll'),
+      message: t('tracker.resetConfirm'),
+      confirmText: t('common.erase'),
+      cancelText: t('common.cancel'),
+      destructive: true,
+    });
+    if (ok) resetAll();
+  }, [resetAll, confirm, t]);
 
   const handleTitleSubmit = useCallback((text: string) => {
     if (currentPageId && text.trim()) {

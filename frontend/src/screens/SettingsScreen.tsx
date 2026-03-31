@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useConfirm } from '../hooks/useConfirm';
 import { apiFetch } from '../lib/api';
 import { COLORS, FONTS } from '../lib/theme';
 
@@ -13,32 +14,31 @@ interface Props {
 export default function SettingsScreen({ onBack }: Props) {
   const { logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
+  const confirm = useConfirm();
 
-  const handleLogout = () => {
-    if (Platform.OS === 'web') {
-      if (confirm(t('settings.logoutConfirm'))) logout();
-    } else {
-      Alert.alert(t('settings.logout'), t('settings.logoutConfirm'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.yes'), onPress: logout },
-      ]);
-    }
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: t('settings.logout'),
+      message: t('settings.logoutConfirm'),
+      confirmText: t('common.yes'),
+      cancelText: t('common.cancel'),
+    });
+    if (ok) logout();
   };
 
-  const handleDeleteAccount = () => {
-    const doDelete = async () => {
+  const handleDeleteAccount = async () => {
+    const ok = await confirm({
+      title: t('settings.deleteAccount'),
+      message: t('settings.deleteAccountConfirm'),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
+      destructive: true,
+    });
+    if (ok) {
       try {
         await apiFetch('/auth/account', { method: 'DELETE' });
         logout();
       } catch { /* ignore */ }
-    };
-    if (Platform.OS === 'web') {
-      if (confirm(t('settings.deleteAccountConfirm'))) doDelete();
-    } else {
-      Alert.alert(t('settings.deleteAccount'), t('settings.deleteAccountConfirm'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: doDelete },
-      ]);
     }
   };
 

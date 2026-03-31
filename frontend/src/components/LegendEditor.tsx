@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { COLORS, FONTS } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useConfirm } from '../hooks/useConfirm';
 import ColorPicker from './ColorPicker';
 import type { Legend } from '../hooks/useLegends';
 import type { Cell } from '../hooks/useCells';
@@ -19,6 +20,7 @@ interface Props {
 
 export default function LegendEditor({ legends, cells, palette, brushColor, onCreateLegend, onDeleteLegend, onOpenPaletteConfig, onClose }: Props) {
   const { t } = useLanguage();
+  const confirmDialog = useConfirm();
   const [pickerColor, setPickerColor] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState('');
   const [adding, setAdding] = useState(false);
@@ -33,20 +35,17 @@ export default function LegendEditor({ legends, cells, palette, brushColor, onCr
     setAdding(false);
   };
 
-  const handleDelete = (legend: Legend) => {
-    // Check if color is used in grid
+  const handleDelete = async (legend: Legend) => {
     const usedInGrid = cells.some(c => c.color.toUpperCase() === legend.color.toUpperCase());
     const msg = usedInGrid ? t('tracker.deleteLegendConfirm') : t('tracker.deleteLegendConfirmSimple');
-
-    const doDelete = () => onDeleteLegend(legend.id, legend.color);
-    if (Platform.OS === 'web') {
-      if (confirm(msg)) doDelete();
-    } else {
-      Alert.alert(t('common.delete'), msg, [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: doDelete },
-      ]);
-    }
+    const ok = await confirmDialog({
+      title: t('common.delete'),
+      message: msg,
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
+      destructive: true,
+    });
+    if (ok) onDeleteLegend(legend.id, legend.color);
   };
 
   return (

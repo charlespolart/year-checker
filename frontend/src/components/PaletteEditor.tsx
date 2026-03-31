@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Pressable, Platform } from 'react-native';
 import { COLORS, FONTS, DEFAULT_PALETTE } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useConfirm } from '../hooks/useConfirm';
 import type { Cell } from '../hooks/useCells';
 import type { Legend } from '../hooks/useLegends';
 
@@ -31,6 +32,7 @@ function isValidHex(s: string): boolean {
 
 export default function PaletteEditor({ palette, cells, legends, onSave, onClose }: Props) {
   const { t } = useLanguage();
+  const confirmDialog = useConfirm();
   const [rows, setRows] = useState<string[][]>(() => palette.map(r => [...r]));
   const originalPalette = useRef(palette.map(r => [...r]));
   const colorMapRef = useRef<Record<string, string>>({});
@@ -137,12 +139,11 @@ export default function PaletteEditor({ palette, cells, legends, onSave, onClose
     };
 
     if (hasUsage) {
-      const msg = t('palette.deleteRowBlocked');
-      if (Platform.OS === 'web') {
-        alert(msg);
-      } else {
-        Alert.alert(t('palette.deleteRow'), msg);
-      }
+      confirmDialog({
+        title: t('palette.deleteRow'),
+        message: t('palette.deleteRowBlocked'),
+        confirmText: 'OK',
+      });
       return;
     }
     doDelete();
