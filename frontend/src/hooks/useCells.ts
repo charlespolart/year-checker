@@ -7,6 +7,7 @@ export interface Cell {
   month: number;
   day: number;
   color: string;
+  comment?: string | null;
   updatedAt: string;
 }
 
@@ -62,22 +63,21 @@ export function useCells(pageId: string | null) {
     });
   }, [pageId]);
 
-  const setCell = useCallback((month: number, day: number, color: string) => {
+  const setCell = useCallback((month: number, day: number, color: string, comment?: string | null) => {
     if (!pageId) return;
     // Optimistic update
     const prev = cells.find(c => c.month === month && c.day === day);
     setCells(old => {
       const idx = old.findIndex(c => c.month === month && c.day === day);
-      const cell = { pageId, month, day, color, updatedAt: new Date().toISOString() };
+      const cell: Cell = { pageId, month, day, color, comment: comment ?? null, updatedAt: new Date().toISOString() };
       if (idx >= 0) return old.map((c, i) => i === idx ? cell : c);
       return [...old, cell];
     });
     // Send request in background, revert on failure
     apiFetch(`/cells/${pageId}`, {
       method: 'PUT',
-      body: JSON.stringify({ month, day, color }),
+      body: JSON.stringify({ month, day, color, comment: comment ?? null }),
     }).catch(() => {
-      // Revert
       if (prev) setCells(old => old.map(c => (c.month === month && c.day === day) ? prev : c));
       else setCells(old => old.filter(c => !(c.month === month && c.day === day)));
     });
@@ -107,5 +107,9 @@ export function useCells(pageId: string | null) {
     return cell?.color ?? null;
   }, [cells]);
 
-  return { cells, loading, setCell, deleteCell, resetAll, getCellColor, refetch: fetchCells };
+  const getCell = useCallback((month: number, day: number): Cell | null => {
+    return cells.find(c => c.month === month && c.day === day) ?? null;
+  }, [cells]);
+
+  return { cells, loading, setCell, deleteCell, resetAll, getCellColor, getCell, refetch: fetchCells };
 }

@@ -79,6 +79,8 @@ const translations = {
     'common.delete': 'Supprimer',
     'common.yes': 'Oui',
     'common.erase': 'Effacer',
+    'common.confirm': 'Confirmer',
+    'cell.commentPlaceholder': 'Ajouter un commentaire...',
     'common.add': '+ Add',
   },
   en: {
@@ -161,6 +163,8 @@ const translations = {
     'common.delete': 'Delete',
     'common.yes': 'Yes',
     'common.erase': 'Erase',
+    'common.confirm': 'Confirm',
+    'cell.commentPlaceholder': 'Add a comment...',
     'common.add': '+ Add',
   },
   'zh-CN': {
@@ -243,7 +247,9 @@ const translations = {
     'common.delete': '删除',
     'common.yes': '确定',
     'common.erase': '清除',
+    'common.confirm': '确认',
     'common.add': '+ 添加',
+    'cell.commentPlaceholder': '添加评论...',
   },
   'zh-TW': {
     // Auth
@@ -325,7 +331,9 @@ const translations = {
     'common.delete': '刪除',
     'common.yes': '確定',
     'common.erase': '清除',
+    'common.confirm': '確認',
     'common.add': '+ 新增',
+    'cell.commentPlaceholder': '新增評論...',
   },
 } as const;
 

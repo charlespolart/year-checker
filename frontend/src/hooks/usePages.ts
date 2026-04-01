@@ -5,6 +5,7 @@ import { addWsListener } from '../lib/ws';
 export interface Page {
   id: string;
   title: string;
+  year: number;
   position: number;
   palette: string[][] | null;
   createdAt: string;

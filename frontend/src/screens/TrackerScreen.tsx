@@ -13,6 +13,7 @@ import TrackerGrid from '../components/TrackerGrid';
 import PaletteEditor from '../components/PaletteEditor';
 import LegendEditor from '../components/LegendEditor';
 import LegendList from '../components/LegendList';
+import CellEditor from '../components/CellEditor';
 import PageTabs from '../components/PageTabs';
 import SideMenu from '../components/SideMenu';
 import Stats from '../components/Stats';
@@ -29,11 +30,11 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
   const { t } = useLanguage();
   const { pages, createPage, updatePage, deletePage } = usePages();
   const [activePageId, setActivePageId] = useState<string | null>(null);
-  const [brushColor, setBrushColor] = useState<string | null>(null);
   const confirm = useConfirm();
   const { playTap, playErase } = useTapSound();
   const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
   const [legendEditorOpen, setLegendEditorOpen] = useState(false);
+  const [cellEditorTarget, setCellEditorTarget] = useState<{ month: number; day: number } | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { width, height } = useWindowDimensions();
@@ -81,24 +82,15 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
     ? activePageId
     : pages[0]?.id ?? null;
 
-  const { cells, getCellColor, setCell, deleteCell, resetAll } = useCells(currentPageId);
+  const { cells, getCellColor, getCell, setCell, deleteCell, resetAll } = useCells(currentPageId);
   const { legends, createLegend, deleteLegend, reorderLegends } = useLegends(currentPageId);
 
   const currentPage = pages.find(p => p.id === currentPageId);
   const currentPalette = currentPage?.palette || DEFAULT_PALETTE;
 
   const handleCellPress = useCallback((month: number, day: number) => {
-    const currentColor = getCellColor(month, day);
-    if (brushColor) {
-      if (currentColor === brushColor) return; // Same color, do nothing
-      playTap();
-      setCell(month, day, brushColor);
-    } else {
-      if (!currentColor) return; // Already empty, do nothing
-      playErase();
-      deleteCell(month, day);
-    }
-  }, [brushColor, setCell, deleteCell, getCellColor, playTap, playErase]);
+    setCellEditorTarget({ month, day });
+  }, []);
 
   const handleAddPage = useCallback(async () => {
     const page = await createPage();
@@ -211,14 +203,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
         <View style={[styles.trackerLayout, width >= 768 && styles.trackerLayoutRow]}>
           <View style={[styles.sidebar, width >= 768 && [styles.sidebarVertical, { width: SIDEBAR_W }]]}>
             <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
-            <LegendList
-              legends={legends}
-              brushColor={brushColor}
-              onSelectLegend={(color) => {
-                if (color === '__eraser__') setBrushColor(null);
-                else setBrushColor(prev => prev === color ? null : color);
-              }}
-            />
+            <LegendList legends={legends} />
             <TouchableOpacity style={styles.legendEditBtn} onPress={() => setLegendEditorOpen(true)}>
               <Text style={styles.legendEditBtnText}>{t('tracker.editLegends')}</Text>
             </TouchableOpacity>
@@ -235,7 +220,7 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
             {currentPageId ? (
               <TrackerGrid
                 getCellColor={getCellColor}
-                selectedColor={brushColor}
+                selectedColor={null}
                 onCellPress={handleCellPress}
                 dotSize={dotSize}
               />
@@ -330,13 +315,6 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
               });
             }
 
-            // Reset selected color if it's no longer in the new palette
-            if (palette && brushColor) {
-              const newColor = colorMap[brushColor.toUpperCase()] || brushColor;
-              const flat = palette.flat();
-              if (!flat.includes(newColor)) setBrushColor(null);
-              else setBrushColor(newColor);
-            }
           }}
           onClose={() => { setPaletteEditorOpen(false); setLegendEditorOpen(true); }}
         />
@@ -347,17 +325,47 @@ export default function TrackerScreen({ onOpenSettings }: Props) {
           legends={legends}
           cells={cells}
           palette={currentPalette}
-          brushColor={brushColor}
+          brushColor={null}
           onCreateLegend={createLegend}
           onDeleteLegend={async (id, color) => {
             await deleteLegend(id);
-            if (brushColor?.toUpperCase() === color.toUpperCase()) setBrushColor(null);
             const matching = cells.filter(c => c.color.toUpperCase() === color.toUpperCase());
             await Promise.all(matching.map(c => deleteCell(c.month, c.day)));
           }}
           onReorderLegends={reorderLegends}
           onOpenPaletteConfig={() => { setLegendEditorOpen(false); setPaletteEditorOpen(true); }}
           onClose={() => setLegendEditorOpen(false)}
+        />
+      )}
+
+      {/* Cell Editor Popup */}
+      {cellEditorTarget && currentPageId && (
+        <CellEditor
+          month={cellEditorTarget.month}
+          day={cellEditorTarget.day}
+          year={currentPage?.year ?? new Date().getFullYear()}
+          cell={getCell(cellEditorTarget.month, cellEditorTarget.day)}
+          legends={legends}
+          onSave={(color, comment) => {
+            playTap();
+            setCell(cellEditorTarget.month, cellEditorTarget.day, color, comment);
+            setCellEditorTarget(null);
+          }}
+          onDelete={() => {
+            playErase();
+            deleteCell(cellEditorTarget.month, cellEditorTarget.day);
+            setCellEditorTarget(null);
+          }}
+          onNavigate={(dir) => {
+            let { month, day } = cellEditorTarget;
+            const yr = currentPage?.year ?? new Date().getFullYear();
+            const daysInMonth = (m: number) => new Date(yr, m + 1, 0).getDate();
+            day += dir;
+            if (day < 1) { month--; if (month < 0) month = 11; day = daysInMonth(month); }
+            else if (day > daysInMonth(month)) { month++; if (month > 11) month = 0; day = 1; }
+            setCellEditorTarget({ month, day });
+          }}
+          onClose={() => setCellEditorTarget(null)}
         />
       )}
     </SafeContainer>
