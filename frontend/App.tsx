@@ -36,17 +36,34 @@ function clearUrlParams() {
   }
 }
 
-function AppContent() {
-  const { isLoading, isAuthenticated } = useAuth();
+function AuthenticatedContent() {
   const { pages, createPage, deletePage } = usePages();
-  const [authScreen, setAuthScreen] = useState<'login' | 'register' | 'forgot'>('login');
   const [showSettings, setShowSettings] = useState(false);
   const [activePageId, setActivePageId] = useState<string | null>(null);
 
-  // Reset UI state on logout
-  useEffect(() => {
-    if (!isAuthenticated) { setShowSettings(false); setActivePageId(null); }
-  }, [isAuthenticated]);
+  if (showSettings) {
+    return <SettingsScreen onBack={() => setShowSettings(false)} />;
+  }
+
+  if (activePageId) {
+    return <TrackerScreen pageId={activePageId} onBack={() => setActivePageId(null)} onOpenSettings={() => setShowSettings(true)} />;
+  }
+
+  return <PageListScreen
+    pages={pages}
+    onSelectPage={setActivePageId}
+    onCreatePage={async () => {
+      const page = await createPage();
+      if (page) setActivePageId(page.id);
+    }}
+    onDeletePage={deletePage}
+    onOpenSettings={() => setShowSettings(true)}
+  />;
+}
+
+function AppContent() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const [authScreen, setAuthScreen] = useState<'login' | 'register' | 'forgot'>('login');
   const [resetToken, setResetToken] = useState<string | undefined>();
 
   useEffect(() => {
@@ -62,7 +79,6 @@ function AppContent() {
     );
   }
 
-  // Reset password screen (shown regardless of auth state)
   if (resetToken) {
     return <ResetPasswordScreen token={resetToken} onDone={() => { setResetToken(undefined); clearUrlParams(); }} />;
   }
@@ -73,24 +89,7 @@ function AppContent() {
     return <LoginScreen onSwitchToRegister={() => setAuthScreen('register')} onForgotPassword={() => setAuthScreen('forgot')} />;
   }
 
-  if (showSettings) {
-    return <SettingsScreen onBack={() => setShowSettings(false)} />;
-  }
-
-  if (activePageId) {
-    return <TrackerScreen pageId={activePageId} onBack={() => setActivePageId(null)} onOpenSettings={() => setShowSettings(true)} />;
-  }
-
-  return <PageListScreen
-    pages={pages}
-    onSelectPage={setActivePageId}
-    onCreatePage={async (year) => {
-      const page = await createPage(undefined);
-      if (page) setActivePageId(page.id);
-    }}
-    onDeletePage={deletePage}
-    onOpenSettings={() => setShowSettings(true)}
-  />;
+  return <AuthenticatedContent />;
 }
 
 export default function App() {

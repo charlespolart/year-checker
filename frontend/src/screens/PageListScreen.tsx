@@ -13,7 +13,7 @@ const SafeContainer = Platform.OS === 'web'
 interface Props {
   pages: Page[];
   onSelectPage: (id: string) => void;
-  onCreatePage: (year?: number) => void;
+  onCreatePage: () => void;
   onDeletePage: (id: string) => void;
   onOpenSettings: () => void;
 }
@@ -23,16 +23,16 @@ export default function PageListScreen({ pages, onSelectPage, onCreatePage, onDe
   const confirm = useConfirm();
   const { width } = useWindowDimensions();
 
-  // Get available years
-  const years = useMemo(() => {
-    const set = new Set(pages.map(p => p.year ?? new Date().getFullYear()));
-    return [...set].sort((a, b) => b - a);
-  }, [pages]);
+  const currentYear = new Date().getFullYear();
 
-  const [selectedYear, setSelectedYear] = useState(() => {
-    const current = new Date().getFullYear();
-    return years.includes(current) ? current : years[0] ?? current;
-  });
+  // Get available years (only past years that have pages + current year)
+  const years = useMemo(() => {
+    const set = new Set(pages.map(p => p.year ?? currentYear));
+    set.add(currentYear); // Always include current year
+    return [...set].sort((a, b) => b - a).filter(y => y <= currentYear);
+  }, [pages, currentYear]);
+
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const filteredPages = useMemo(
     () => pages.filter(p => (p.year ?? new Date().getFullYear()) === selectedYear),
@@ -66,15 +66,28 @@ export default function PageListScreen({ pages, onSelectPage, onCreatePage, onDe
       </View>
 
       {/* Year navigation */}
-      <View style={styles.yearNav}>
-        <TouchableOpacity onPress={() => setSelectedYear(y => y - 1)}>
-          <Text style={styles.yearArrow}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.yearText}>{selectedYear}</Text>
-        <TouchableOpacity onPress={() => setSelectedYear(y => y + 1)}>
-          <Text style={styles.yearArrow}>›</Text>
-        </TouchableOpacity>
-      </View>
+      {years.length > 1 && (
+        <View style={styles.yearNav}>
+          <TouchableOpacity
+            onPress={() => setSelectedYear(y => { const prev = years.find(yr => yr < y); return prev ?? y; })}
+            disabled={selectedYear === years[years.length - 1]}
+          >
+            <Text style={[styles.yearArrow, selectedYear === years[years.length - 1] && styles.yearArrowDisabled]}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.yearText}>{selectedYear}</Text>
+          <TouchableOpacity
+            onPress={() => setSelectedYear(y => { const next = [...years].reverse().find(yr => yr > y); return next ?? y; })}
+            disabled={selectedYear === currentYear}
+          >
+            <Text style={[styles.yearArrow, selectedYear === currentYear && styles.yearArrowDisabled]}>›</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {years.length <= 1 && (
+        <View style={styles.yearNav}>
+          <Text style={styles.yearText}>{selectedYear}</Text>
+        </View>
+      )}
 
       {/* Page grid */}
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.grid}>
@@ -113,14 +126,16 @@ export default function PageListScreen({ pages, onSelectPage, onCreatePage, onDe
           );
         })}
 
-        {/* Add page button */}
-        <TouchableOpacity
-          style={[styles.card, styles.addCard, { width: cardWidth }]}
-          onPress={() => onCreatePage(selectedYear)}
-        >
-          <Text style={styles.addIcon}>+</Text>
-          <Text style={styles.addText}>{t('common.add').replace('+ ', '')}</Text>
-        </TouchableOpacity>
+        {/* Add page button — only on current year */}
+        {selectedYear === currentYear && (
+          <TouchableOpacity
+            style={[styles.card, styles.addCard, { width: cardWidth }]}
+            onPress={() => onCreatePage()}
+          >
+            <Text style={styles.addIcon}>+</Text>
+            <Text style={styles.addText}>{t('common.add').replace('+ ', '')}</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeContainer>
   );
@@ -168,6 +183,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: COLORS.accent,
     paddingHorizontal: 8,
+  },
+  yearArrowDisabled: {
+    opacity: 0.2,
   },
   yearText: {
     fontFamily: FONTS.pixel,
