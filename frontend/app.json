@@ -14,8 +14,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.mydiandian",
-      "buildNumber": "1",
-      "associatedDomains": ["applinks:mydiandian.app"],
+      "associatedDomains": [
+        "applinks:mydiandian.app"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "Not used",
         "ITSAppUsesNonExemptEncryption": false
@@ -37,6 +38,12 @@
       "expo-secure-store",
       "expo-font",
       "expo-localization"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "70239696-1f18-4e5e-b051-2d1f8f3b90db"
+      }
+    },
+    "owner": "overridedev"
   }
 }
