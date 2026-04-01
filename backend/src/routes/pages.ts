@@ -24,8 +24,11 @@ router.get('/', async (req, res) => {
   }
 });
 
+const TITLE_MAX = 50;
+
 const createPageSchema = z.object({
-  title: z.string().min(1).max(200).default('New Tracker'),
+  title: z.string().min(1).max(TITLE_MAX).default('New Tracker'),
+  year: z.number().int().min(2000).max(2100).default(new Date().getFullYear()),
   position: z.number().int().min(0).default(0),
 });
 
@@ -49,7 +52,7 @@ const paletteSchema = z.array(
 ).min(1).max(7);
 
 const updatePageSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
+  title: z.string().min(1).max(TITLE_MAX).optional(),
   position: z.number().int().min(0).optional(),
   palette: paletteSchema.nullable().optional(),
 });

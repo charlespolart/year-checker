@@ -36,6 +36,7 @@ export const pages = pgTable('pages', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull().default('New Tracker'),
+  year: integer('year').notNull().default(new Date().getFullYear()),
   position: integer('position').notNull().default(0),
   palette: text('palette'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -46,6 +47,7 @@ export const cells = pgTable('cells', {
   month: smallint('month').notNull(),
   day: smallint('day').notNull(),
   color: text('color').notNull(),
+  comment: text('comment'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   primaryKey({ columns: [t.pageId, t.month, t.day] }),

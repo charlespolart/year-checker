@@ -30,9 +30,12 @@ router.get('/:pageId', async (req, res) => {
   }
 });
 
+const LABEL_MAX = 30;
+const MAX_LEGENDS = 12;
+
 const createLegendSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  label: z.string().min(1).max(100),
+  label: z.string().min(1).max(LABEL_MAX),
   position: z.number().int().min(0).default(0),
 });
 
@@ -44,6 +47,13 @@ router.post('/:pageId', validate(createLegendSchema), async (req, res) => {
       .where(and(eq(pages.id, String(req.params.pageId)), eq(pages.userId, req.userId!)))
       .limit(1);
     if (!page) { res.status(404).json({ error: 'Page not found' }); return; }
+
+    // Check legend count
+    const existing = await db.select({ id: legends.id }).from(legends).where(eq(legends.pageId, String(req.params.pageId)));
+    if (existing.length >= MAX_LEGENDS) {
+      res.status(400).json({ error: `Maximum ${MAX_LEGENDS} legends per page` });
+      return;
+    }
 
     const [legend] = await db.insert(legends)
       .values({ pageId: String(req.params.pageId), ...req.body })
