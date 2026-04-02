@@ -58,22 +58,21 @@ function StatItem({ value, label }: { value: string; label: string }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
+    gap: 2,
   },
   stat: {
-    alignItems: 'center',
-    gap: 1,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
   },
   value: {
     fontFamily: FONTS.pixel,
-    fontSize: 16,
+    fontSize: 13,
     color: COLORS.textLabel,
   },
   label: {
     fontFamily: FONTS.dot,
-    fontSize: 11,
+    fontSize: 10,
     color: COLORS.textMuted,
     letterSpacing: 1,
   },

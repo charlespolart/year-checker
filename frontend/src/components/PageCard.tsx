@@ -32,7 +32,8 @@ export default function PageCard({ page, cardWidth, onPress, onLongPress }: Prop
 
   const year = page.year ?? new Date().getFullYear();
   const cellMap = new Map(cells.map(c => [`${c.month}-${c.day}`, c.color]));
-  const dotSize = Math.max(2, Math.min(4, (cardWidth - 40) / 14));
+  const availW = cardWidth - 24; // card padding (12 * 2)
+  const dotSize = Math.floor(Math.max(2, (availW - 11) / 12)); // 11 = gaps between 12 cols
 
   return (
     <TouchableOpacity
@@ -41,39 +42,39 @@ export default function PageCard({ page, cardWidth, onPress, onLongPress }: Prop
       onLongPress={onLongPress}
       activeOpacity={0.8}
     >
-      {/* Grid + legend dots side by side */}
-      <View style={styles.gridRow}>
-        <View style={styles.miniGrid}>
-          {Array.from({ length: 12 }, (_, m) => (
-            <View key={m} style={styles.miniCol}>
-              {Array.from({ length: getDaysInMonth(m, year) }, (_, d) => {
-                const color = cellMap.get(`${m}-${d + 1}`);
-                return (
-                  <View
-                    key={d}
-                    style={[
-                      styles.miniDot,
-                      { width: dotSize, height: dotSize, borderRadius: dotSize / 2 },
-                      { backgroundColor: color || COLORS.dotEmpty },
-                    ]}
-                  />
-                );
-              })}
-            </View>
-          ))}
-        </View>
-
-        {legends.length > 0 && (
-          <View style={styles.legendDots}>
-            {legends.slice(0, 8).map((l, i) => (
-              <View key={i} style={[styles.legendDot, { backgroundColor: l.color }]} />
-            ))}
-          </View>
-        )}
-      </View>
-
       {/* Title */}
       <Text style={styles.cardTitle} numberOfLines={1}>{page.title}</Text>
+
+      {/* Legend dots — horizontal, top left (always reserve space) */}
+      <View style={styles.legendDots}>
+        {legends.length > 0
+          ? legends.slice(0, 8).map((l, i) => (
+              <View key={i} style={[styles.legendDot, { backgroundColor: l.color }]} />
+            ))
+          : <View style={[styles.legendDot, { backgroundColor: 'transparent' }]} />
+        }
+      </View>
+
+      {/* Grid */}
+      <View style={styles.miniGrid}>
+        {Array.from({ length: 12 }, (_, m) => (
+          <View key={m} style={styles.miniCol}>
+            {Array.from({ length: getDaysInMonth(m, year) }, (_, d) => {
+              const color = cellMap.get(`${m}-${d + 1}`);
+              return (
+                <View
+                  key={d}
+                  style={[
+                    styles.miniDot,
+                    { width: dotSize, height: dotSize, borderRadius: dotSize / 2 },
+                    { backgroundColor: color || COLORS.dotEmpty },
+                  ]}
+                />
+              );
+            })}
+          </View>
+        ))}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -84,18 +85,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.shellBorder,
-    padding: 10,
-    gap: 6,
-  },
-  gridRow: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
+    padding: 12,
+    gap: 10,
   },
   miniGrid: {
     flexDirection: 'row',
     gap: 1,
-    flex: 1,
   },
   miniCol: {
     gap: 1,
@@ -112,13 +107,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   legendDots: {
-    gap: 3,
-    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   legendDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.06)',
   },

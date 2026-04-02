@@ -148,6 +148,7 @@ export default function LegendEditor({ legends, cells, palette, brushColor, onCr
                 value={newLabel}
                 onChangeText={setNewLabel}
                 onSubmitEditing={handleAdd}
+                maxLength={30}
               />
               <TouchableOpacity style={styles.addBtn} onPress={handleAdd} disabled={adding || !pickerColor}>
                 <Text style={styles.addBtnText}>+</Text>

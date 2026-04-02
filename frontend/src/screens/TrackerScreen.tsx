@@ -35,11 +35,18 @@ export default function TrackerScreen({ pageId, onBack, onOpenSettings }: Props)
   const [legendEditorOpen, setLegendEditorOpen] = useState(false);
   const [cellEditorTarget, setCellEditorTarget] = useState<{ month: number; day: number } | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
+  const [gridDotSize, setGridDotSize] = useState(16);
   const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const isTabletLandscape = isLandscape && height >= 600;
+  const isPhoneLandscape = isLandscape && height < 600;
+  const spacingH = 3;
+  const spacingV = 2;
+
 
   const currentPageId = pageId;
 
-  const { cells, getCellColor, getCell, setCell, deleteCell, resetAll } = useCells(currentPageId);
+  const { cells, getCellColor, getCell, setCell, deleteCell } = useCells(currentPageId);
   const { legends, createLegend, deleteLegend, reorderLegends } = useLegends(currentPageId);
 
   const currentPage = pages.find(p => p.id === currentPageId);
@@ -49,16 +56,6 @@ export default function TrackerScreen({ pageId, onBack, onOpenSettings }: Props)
     setCellEditorTarget({ month, day });
   }, []);
 
-  const handleResetAll = useCallback(async () => {
-    const ok = await confirm({
-      title: t('tracker.resetAll'),
-      message: t('tracker.resetConfirm'),
-      confirmText: t('common.erase'),
-      cancelText: t('common.cancel'),
-      destructive: true,
-    });
-    if (ok) resetAll();
-  }, [resetAll, confirm, t]);
 
   const handleTitleSubmit = useCallback((text: string) => {
     if (currentPageId && text.trim()) {
@@ -67,130 +64,91 @@ export default function TrackerScreen({ pageId, onBack, onOpenSettings }: Props)
     setEditingTitle(false);
   }, [currentPageId, updatePage]);
 
-  const isWide = width >= 1100;
-  const isMobile = width < 768;
-  const hasSidebarRow = !isMobile; // sidebar beside grid on tablet+
-  const titleSize = isWide ? (width >= 1700 ? 52 : 42) : width >= 768 ? 28 : 22;
-  const subtitleSize = isWide ? (width >= 1700 ? 24 : 18) : width >= 768 ? 16 : 14;
-  const starsSize = isWide ? (width >= 1700 ? 22 : 18) : 14;
-
-  // Dynamic dot sizing (matching original resizeDots logic)
-  const spacingH = 3;
-  const spacingV = 2;
-  const isTablet = !isMobile && !isWide;
-  const SIDEBAR_W = hasSidebarRow ? (isTablet ? 130 : 160) : 0;
-  const SIDEBAR_GAP = hasSidebarRow ? 12 : 0;
-  const LABEL_W = 24;
-
-  // Vertical: shell padding(8+6) + screen padding+border(8+2)*2 + section title(~30) + header row(~20)
-  const vOverhead = 8 + 6 + 20 + 30 + 20;
-  const maxShellH = height - 4;
-  const availH = maxShellH - vOverhead;
-  const dotFromH = Math.floor((availH - 32 * spacingV) / 31);
-
-  // Horizontal overhead: all paddings, borders, sidebar, labels, and safety margin
-  const pagePadH = isWide ? 60 : 8;
-  const shellPadH = 24 + 8 + 2;
-  const screenPadH = (8 + 2) * 2;
-  const safetyMargin = 16;
-  const hOverhead = shellPadH + screenPadH + SIDEBAR_W + SIDEBAR_GAP + LABEL_W + pagePadH + safetyMargin;
-  const availW = width - hOverhead;
-  const dotFromW = Math.floor((availW - 13 * spacingH) / 12);
-
-  // Vertical layout (non-wide) scrolls, so use width only; wide layout uses min(h, w)
-  const maxDot = isWide ? 48 : 32;
-  const dotSize = Math.max(8, Math.min(isWide ? Math.min(dotFromH, dotFromW) : dotFromW, maxDot));
-
-
-  const renderHeader = () => (
-    <View style={styles.headerBlock}>
-      {editingTitle ? (
-        <TextInput
-          style={[styles.titleInput, { fontSize: titleSize }]}
-          defaultValue={currentPage?.title}
-          autoFocus
-          onBlur={(e) => handleTitleSubmit((e.nativeEvent as any).text ?? currentPage?.title ?? '')}
-          onSubmitEditing={(e) => handleTitleSubmit(e.nativeEvent.text)}
-          selectTextOnFocus
-        />
-      ) : (
-        <TouchableOpacity onPress={() => setEditingTitle(true)}>
-          <Text style={[styles.pageTitle, { fontSize: titleSize }]}>{currentPage?.title || 'Dian Dian'}</Text>
-        </TouchableOpacity>
-      )}
-      <Text style={[styles.subtitle, { fontSize: subtitleSize }]}>~ {new Date().getFullYear()} ~</Text>
-      <Text style={[styles.starsDeco, { fontSize: starsSize }]}>☆ ☆ ☆ ☆ ☆</Text>
-    </View>
-  );
-
-  const renderShell = () => (
-    <View style={[styles.shell, isWide && { maxHeight: height - 4 }]}>
-      <View style={styles.spineLine} />
-      <View style={styles.screen}>
-        <Text style={styles.sectionTitle}>{currentPage?.title || 'Tracker'}</Text>
-
-        <View style={[styles.trackerLayout, width >= 768 && styles.trackerLayoutRow]}>
-          <View style={[styles.sidebar, width >= 768 && [styles.sidebarVertical, { width: SIDEBAR_W }]]}>
-            <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
-            <LegendList legends={legends} />
-            <TouchableOpacity style={styles.legendEditBtn} onPress={() => setLegendEditorOpen(true)}>
-              <Text style={styles.legendEditBtnText}>{t('tracker.editLegends')}</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.sidebarTitle, { marginTop: 8 }]}>{t('tracker.stats')}</Text>
-            <Stats cells={cells} />
-
-            <TouchableOpacity style={styles.resetBtn} onPress={handleResetAll}>
-              <Text style={styles.resetBtnText}>{t('tracker.resetAll')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.gridContainer}>
-            {currentPageId ? (
-              <TrackerGrid
-                getCellColor={getCellColor}
-                selectedColor={null}
-                onCellPress={handleCellPress}
-                dotSize={dotSize}
-              />
-            ) : (
-              <Text style={styles.loadingText}>{t('tracker.loading')}</Text>
-            )}
-          </View>
-        </View>
-      </View>
-    </View>
-  );
 
   return (
     <SafeContainer style={styles.safeArea} edges={['top', 'bottom']}>
-      {/* Back button */}
-      <View style={styles.backBar}>
+      {/* Back + title bar — hidden on tablet landscape */}
+      {!isTabletLandscape && <View style={styles.backBar}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backBtnText}>← {t('settings.back')}</Text>
+          <Text style={styles.backBtnText}>←</Text>
         </TouchableOpacity>
-      </View>
+        {editingTitle ? (
+          <TextInput
+            style={styles.backBarTitleInput}
+            defaultValue={currentPage?.title}
+            autoFocus
+            onBlur={(e) => handleTitleSubmit((e.nativeEvent as any).text ?? currentPage?.title ?? '')}
+            onSubmitEditing={(e) => handleTitleSubmit(e.nativeEvent.text)}
+            selectTextOnFocus
+            maxLength={50}
+          />
+        ) : (
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => setEditingTitle(true)}>
+            <Text style={styles.backBarTitle} numberOfLines={1}>{currentPage?.title || ''}</Text>
+          </TouchableOpacity>
+        )}
+        <View style={styles.backBtn} />
+      </View>}
 
+      {/* Content — scrollable only on phone landscape */}
       <ScrollView
-        style={styles.outerScroll}
-        contentContainerStyle={[styles.pageLayout, isWide ? styles.pageLayoutCentered : styles.pageLayoutMobile]}
-        showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
+        scrollEnabled={isPhoneLandscape}
+        contentContainerStyle={!isPhoneLandscape ? { flex: 1 } : undefined}
       >
-        {isWide ? (
-          <View style={styles.wideLayout}>
-            <View style={styles.leftColumn}>
-              <View style={styles.leftColumnCenter}>
-                {renderHeader()}
+        <View style={[isTabletLandscape ? styles.wideLayout : { flex: 1 }]}>
+        {isTabletLandscape && (
+          <View style={styles.leftColumn}>
+            <TouchableOpacity onPress={() => setEditingTitle(true)}>
+              <Text style={styles.wideTitle}>{currentPage?.title || 'Dian Dian'}</Text>
+            </TouchableOpacity>
+            <Text style={styles.wideSubtitle}>~ {currentPage?.year ?? new Date().getFullYear()} ~</Text>
+            <Text style={styles.wideStars}>☆ ☆ ☆ ☆ ☆</Text>
+            <TouchableOpacity style={styles.wideBackBtn} onPress={onBack}>
+              <Text style={styles.wideBackText}>← {t('settings.back')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={[styles.shell, { flex: 1 }]}>
+          <View style={[styles.screen, { flex: 1 }]}>
+            <View style={[styles.screenRow, { flex: 1 }]}>
+              <View style={styles.sidebar}>
+                <Text style={styles.sidebarTitle}>{t('tracker.legend')}</Text>
+                <LegendList legends={legends} />
+                <TouchableOpacity style={styles.legendEditBtn} onPress={() => setLegendEditorOpen(true)}>
+                  <Text style={styles.legendEditBtnText}>{t('tracker.editLegends')}</Text>
+                </TouchableOpacity>
+                <View style={styles.statsSection}>
+                  <Text style={styles.sidebarTitle}>{t('tracker.stats')}</Text>
+                  <Stats cells={cells} />
+                </View>
+              </View>
+              <View
+                style={[styles.gridContainer, { flex: 1 }]}
+                onLayout={((e: any) => {
+                  const { width: gw, height: gh } = e.nativeEvent.layout;
+                  if (gw < 50 || gh < 50) return;
+                  const labelW = 16;
+                  const headerH = 16;
+                  const dw = (gw - labelW - 11 * spacingH) / 12;
+                  const dh = (gh - headerH - 30 * spacingV) / 31;
+                  const d = Math.max(6, isPhoneLandscape ? Math.min(dw, 32) : Math.min(dw, dh, 32));
+                  if (Math.abs(d - gridDotSize) > 0.3) setGridDotSize(d);
+                })}
+              >
+                {currentPageId ? (
+                  <TrackerGrid
+                    getCellColor={getCellColor}
+                    selectedColor={null}
+                    onCellPress={handleCellPress}
+                    dotSize={gridDotSize}
+                  />
+                ) : null}
               </View>
             </View>
-            {renderShell()}
           </View>
-        ) : (
-          <>
-            {renderHeader()}
-            {renderShell()}
-          </>
-        )}
+        </View>
+        </View>
       </ScrollView>
 
       {paletteEditorOpen && currentPageId && (
@@ -276,68 +234,121 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backBar: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   backBtn: {
-    paddingVertical: 4,
+    width: 28,
+    paddingVertical: 2,
   },
   backBtnText: {
-    fontFamily: FONTS.pixel,
-    fontSize: 11,
+    fontSize: 18,
     color: COLORS.accent,
-    letterSpacing: 1,
   },
-  outerScroll: {
-    flex: 1,
-  },
-  pageLayout: {
-    alignItems: 'center',
-    padding: 4,
-    gap: 4,
-  },
-  pageLayoutMobile: {
-    paddingTop: 54,
-    paddingBottom: 12,
-  },
-  pageLayoutCentered: {
-    minHeight: '100%',
-    paddingVertical: 8,
-  },
-  wideLayout: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    gap: 20,
-    width: '100%',
-  },
-  leftColumn: {
-    alignItems: 'center',
-    width: 350,
-    overflow: 'hidden',
-  },
-  leftColumnCenter: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerBlock: {
-    alignItems: 'center',
-    gap: 2,
-    width: '100%',
-    maxWidth: 350,
-  },
-  pageTitle: {
+  backBarTitle: {
     fontFamily: FONTS.pixel,
-    fontSize: 22,
+    fontSize: 12,
     color: COLORS.title,
     textAlign: 'center',
     letterSpacing: 2,
   },
-  titleInput: {
+  backBarTitleInput: {
+    flex: 1,
     fontFamily: FONTS.pixel,
-    fontSize: 22,
+    fontSize: 12,
+    color: COLORS.title,
+    textAlign: 'center',
+    letterSpacing: 2,
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.tabActiveBorder,
+    borderStyle: 'dashed',
+    paddingVertical: 2,
+  },
+  shell: {
+    flex: 1,
+    backgroundColor: '#faf5ea',
+    borderRadius: 12,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: COLORS.shellBorder,
+    boxShadow: '2px 3px 10px rgba(0,0,0,0.08)',
+    marginHorizontal: 4,
+    marginBottom: 4,
+  },
+  screen: {
+    backgroundColor: COLORS.screen,
+    borderWidth: 2,
+    borderColor: COLORS.screenBorder,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 4,
+    overflow: 'hidden',
+  },
+  sectionTitle: {
+    fontFamily: FONTS.pixel,
+    fontSize: 8,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginBottom: 2,
+    paddingBottom: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.sectionBorder,
+    borderStyle: 'dashed',
+    color: COLORS.textWarm,
+  },
+  screenRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  sidebar: {
+    width: 80,
+    gap: 4,
+  },
+  sidebarTitle: {
+    fontFamily: FONTS.pixel,
+    fontSize: 8,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    paddingBottom: 3,
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.sectionBorder,
+    borderStyle: 'dashed',
+    color: COLORS.textWarm,
+    opacity: 0.7,
+  },
+  statsSection: {
+    marginTop: 'auto' as any,
+    gap: 4,
+  },
+  gridContainer: {
+    alignItems: 'flex-end',
+  },
+  wideLayout: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    paddingHorizontal: 8,
+    gap: 16,
+  },
+  leftColumn: {
+    width: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wideTitle: {
+    fontFamily: FONTS.pixel,
+    fontSize: 28,
+    color: COLORS.title,
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  wideTitleInput: {
+    fontFamily: FONTS.pixel,
+    fontSize: 28,
     color: COLORS.title,
     textAlign: 'center',
     letterSpacing: 2,
@@ -347,7 +358,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     width: '100%',
   },
-  subtitle: {
+  wideSubtitle: {
     fontFamily: FONTS.dot,
     fontSize: 14,
     color: COLORS.subtitle,
@@ -355,133 +366,36 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     marginBottom: 2,
   },
-  starsDeco: {
+  wideStars: {
     fontSize: 14,
     color: COLORS.star,
     letterSpacing: 6,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  // Book shell
-  shell: {
-    backgroundColor: '#faf5ea',
-    borderTopLeftRadius: 4,
-    borderBottomLeftRadius: 4,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
-    paddingTop: 8,
-    paddingBottom: 6,
-    paddingRight: 8,
-    paddingLeft: 24,
-    borderWidth: 1,
-    borderColor: COLORS.shellBorder,
-    maxWidth: '100%' as any,
-    boxShadow: '2px 3px 10px rgba(0,0,0,0.08)',
+  wideBackBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
-  spineLine: {
-    position: 'absolute',
-    left: 18,
-    top: 10,
-    bottom: 10,
-    width: 2,
-    backgroundColor: COLORS.shellSpine1,
-    borderRadius: 1,
-  },
-  screen: {
-    backgroundColor: COLORS.screen,
-    borderWidth: 2,
-    borderColor: COLORS.screenBorder,
-    borderStyle: 'dashed',
-    borderRadius: 14,
-    padding: 8,
-  },
-  sectionTitle: {
+  wideBackText: {
     fontFamily: FONTS.pixel,
     fontSize: 11,
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    marginBottom: 6,
-    paddingBottom: 4,
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.sectionBorder,
-    borderStyle: 'dashed',
-    color: COLORS.textWarm,
-  },
-
-  // Tracker layout
-  trackerLayout: {
-    gap: 10,
-  },
-  trackerLayoutRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  sidebar: {
-    gap: 6,
-    alignItems: 'center',
-    paddingHorizontal: 8,
+    color: COLORS.accent,
+    letterSpacing: 1,
   },
   legendEditBtn: {
-    alignSelf: 'center',
-    marginTop: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderWidth: 1,
     borderColor: COLORS.tabBorder,
-    borderRadius: 8,
+    borderRadius: 6,
     borderStyle: 'dashed',
   },
   legendEditBtnText: {
     fontFamily: FONTS.pixel,
-    fontSize: 8,
+    fontSize: 7,
     letterSpacing: 1,
     color: COLORS.textMuted,
     textTransform: 'uppercase',
-  },
-  sidebarVertical: {
-    width: 160,
-    alignItems: 'stretch',
-  },
-  sidebarTitle: {
-    fontFamily: FONTS.pixel,
-    fontSize: 9,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    paddingBottom: 4,
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.sectionBorder,
-    borderStyle: 'dashed',
-    color: COLORS.textWarm,
-    opacity: 0.7,
-  },
-  resetBtn: {
-    backgroundColor: COLORS.btnReset,
-    borderWidth: 2,
-    borderColor: COLORS.btnResetBorder,
-    borderRadius: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  resetBtnText: {
-    fontFamily: FONTS.pixel,
-    fontSize: 9,
-    letterSpacing: 1,
-    color: COLORS.btnResetText,
-    textTransform: 'uppercase',
-  },
-  gridContainer: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-  loadingText: {
-    fontFamily: FONTS.dot,
-    fontSize: 14,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    padding: 40,
   },
 });

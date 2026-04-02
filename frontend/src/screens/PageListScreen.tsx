@@ -88,15 +88,12 @@ export default function PageListScreen({ pages, onSelectPage, onCreatePage, onDe
           />
         ))}
 
-        {/* Add page button */}
-        <TouchableOpacity
-          style={[styles.addCard, { width: cardWidth }]}
-          onPress={() => onCreatePage()}
-        >
-          <Text style={styles.addIcon}>+</Text>
-          <Text style={styles.addText}>{t('common.add').replace('+ ', '')}</Text>
-        </TouchableOpacity>
       </ScrollView>
+
+      {/* Floating add button */}
+      <TouchableOpacity style={styles.fab} onPress={() => onCreatePage()}>
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </SafeContainer>
   );
 }
@@ -156,31 +153,27 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: 12,
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
-  addCard: {
-    backgroundColor: '#faf5ea',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: COLORS.tabBorder,
-    justifyContent: 'center',
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.btnAdd,
+    borderWidth: 2,
+    borderColor: COLORS.btnAddBorder,
     alignItems: 'center',
-    padding: 12,
-    minHeight: 100,
+    justifyContent: 'center',
+    boxShadow: '0px 3px 8px rgba(0,0,0,0.15)',
   },
-  addIcon: {
+  fabText: {
     fontSize: 28,
-    color: COLORS.subtitle,
-  },
-  addText: {
-    fontFamily: FONTS.pixel,
-    fontSize: 9,
-    color: COLORS.subtitle,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    color: COLORS.btnAddText,
+    marginTop: -2,
   },
 });
