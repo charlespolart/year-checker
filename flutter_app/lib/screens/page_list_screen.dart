@@ -8,11 +8,16 @@ import '../providers/legends_provider.dart';
 import '../providers/pages_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirm_dialog.dart';
-import 'settings_screen.dart';
-import 'tracker_screen.dart';
 
 class PageListScreen extends StatefulWidget {
-  const PageListScreen({super.key});
+  final void Function(String id) onSelectPage;
+  final VoidCallback onOpenSettings;
+
+  const PageListScreen({
+    super.key,
+    required this.onSelectPage,
+    required this.onOpenSettings,
+  });
 
   @override
   State<PageListScreen> createState() => _PageListScreenState();
@@ -51,11 +56,7 @@ class _PageListScreenState extends State<PageListScreen> {
     cellsProv.setPageId(page.id);
     legendsProv.setPageId(page.id);
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TrackerScreen(page: page),
-      ),
-    );
+    widget.onSelectPage(page.id);
   }
 
   Future<void> _deletePage(PageModel page) async {
@@ -113,13 +114,7 @@ class _PageListScreenState extends State<PageListScreen> {
                   ),
                   // Settings button
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
-                      );
-                    },
+                    onTap: widget.onOpenSettings,
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(

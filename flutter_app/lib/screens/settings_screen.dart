@@ -9,7 +9,12 @@ import '../theme/app_theme.dart';
 import '../widgets/confirm_dialog.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final VoidCallback onBack;
+
+  const SettingsScreen({
+    super.key,
+    required this.onBack,
+  });
 
   static const String _version = '1.0.0';
   static const String _aboutUrl = 'https://mydiandian.app/about';
@@ -39,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: onBack,
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Text(
@@ -303,9 +308,6 @@ class SettingsScreen extends StatelessWidget {
 
     if (confirmed == true && context.mounted) {
       await context.read<AuthProvider>().logout();
-      if (context.mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
     }
   }
 
@@ -327,9 +329,6 @@ class SettingsScreen extends StatelessWidget {
         await ApiService().apiFetch('/api/auth/account', method: 'DELETE');
         if (context.mounted) {
           await context.read<AuthProvider>().logout();
-          if (context.mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          }
         }
       } catch (e) {
         debugPrint('Delete account failed: $e');

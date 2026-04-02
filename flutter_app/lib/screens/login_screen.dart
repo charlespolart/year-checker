@@ -5,10 +5,16 @@ import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final VoidCallback onSwitchToRegister;
+  final VoidCallback onForgotPassword;
+
+  const LoginScreen({
+    super.key,
+    required this.onSwitchToRegister,
+    required this.onForgotPassword,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -41,40 +47,14 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await context.read<AuthProvider>().login(email, password);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      final lang = context.read<LanguageProvider>();
-      setState(() => _error = lang.t('auth.loginError'));
+      if (mounted) {
+        final lang = context.read<LanguageProvider>();
+        setState(() => _error = lang.t('auth.loginError'));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _forgotPassword() async {
-    final lang = context.read<LanguageProvider>();
-    final email = _emailController.text.trim();
-    if (email.isEmpty) return;
-
-    try {
-      await ApiService().forgotPassword(email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(lang.t('auth.forgotPasswordSent')),
-            backgroundColor: AppColors.accent,
-          ),
-        );
-      }
-    } catch (_) {
-      // Show the same message to prevent email enumeration
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(lang.t('auth.forgotPasswordSent')),
-            backgroundColor: AppColors.accent,
-          ),
-        );
-      }
     }
   }
 
@@ -193,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
-                        onTap: _forgotPassword,
+                        onTap: widget.onForgotPassword,
                         child: Text(
                           lang.t('auth.forgotPassword'),
                           style: AppFonts.dot(
@@ -257,13 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Switch to register
               GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const RegisterScreen(),
-                    ),
-                  );
-                },
+                onTap: widget.onSwitchToRegister,
                 child: Text(
                   lang.t('auth.switchToRegister'),
                   style: AppFonts.dot(

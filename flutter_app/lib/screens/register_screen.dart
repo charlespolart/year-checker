@@ -5,10 +5,14 @@ import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
-import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final VoidCallback onSwitchToLogin;
+
+  const RegisterScreen({
+    super.key,
+    required this.onSwitchToLogin,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -232,13 +236,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Switch to login
               GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const LoginScreen(),
-                    ),
-                  );
-                },
+                onTap: widget.onSwitchToLogin,
                 child: Text(
                   lang.t('auth.switchToLogin'),
                   style: AppFonts.dot(fontSize: 13, color: AppColors.accent),

@@ -12,24 +12,36 @@ import '../widgets/legend_editor_dialog.dart';
 import '../widgets/tracker_grid.dart';
 
 class TrackerScreen extends StatefulWidget {
-  final PageModel page;
+  final String pageId;
+  final VoidCallback onBack;
+  final VoidCallback onOpenSettings;
 
-  const TrackerScreen({super.key, required this.page});
+  const TrackerScreen({
+    super.key,
+    required this.pageId,
+    required this.onBack,
+    required this.onOpenSettings,
+  });
 
   @override
   State<TrackerScreen> createState() => _TrackerScreenState();
 }
 
 class _TrackerScreenState extends State<TrackerScreen> {
-  late PageModel _page;
   bool _editingTitle = false;
   late TextEditingController _titleController;
+
+  PageModel get _page {
+    final pages = context.read<PagesProvider>().pages;
+    return pages.firstWhere((p) => p.id == widget.pageId);
+  }
 
   @override
   void initState() {
     super.initState();
-    _page = widget.page;
-    _titleController = TextEditingController(text: _page.title);
+    final pages = context.read<PagesProvider>().pages;
+    final page = pages.firstWhere((p) => p.id == widget.pageId);
+    _titleController = TextEditingController(text: page.title);
   }
 
   @override
@@ -42,7 +54,6 @@ class _TrackerScreenState extends State<TrackerScreen> {
     final newTitle = _titleController.text.trim();
     if (newTitle.isNotEmpty && newTitle != _page.title) {
       context.read<PagesProvider>().updatePage(_page.id, {'title': newTitle});
-      _page = _page.copyWith(title: newTitle);
     }
     setState(() => _editingTitle = false);
   }
@@ -77,7 +88,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: widget.onBack,
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Text(

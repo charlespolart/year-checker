@@ -7,7 +7,11 @@ import 'providers/language_provider.dart';
 import 'providers/legends_provider.dart';
 import 'providers/pages_provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/page_list_screen.dart';
+import 'screens/tracker_screen.dart';
+import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/dotted_background.dart';
 
@@ -32,37 +36,139 @@ class DianDianApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Dian Dian',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.themeData,
-        home: const _AppShell(),
+        theme: AppTheme.themeData.copyWith(
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+              TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+            },
+          ),
+        ),
+        home: const AppShell(),
       ),
     );
   }
 }
 
-/// Root shell that draws the dotted background and switches between
-/// loading, login, and home screens based on authentication state.
-class _AppShell extends StatelessWidget {
-  const _AppShell();
+/// The single root widget that manages all screen transitions.
+/// Uses a stack-based approach: DottedBackground is always rendered,
+/// and screens are swapped on top without Navigator transitions.
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+enum AppScreen { login, register, forgotPassword, pageList, tracker, settings }
+
+class _AppShellState extends State<AppShell> {
+  AppScreen _screen = AppScreen.login;
+  String? _activePageId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Reset to login on auth expiry
+    final auth = context.read<AuthProvider>();
+    auth.addListener(_onAuthChange);
+  }
+
+  void _onAuthChange() {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAuthenticated && _screen != AppScreen.login &&
+        _screen != AppScreen.register && _screen != AppScreen.forgotPassword) {
+      setState(() {
+        _screen = AppScreen.login;
+        _activePageId = null;
+      });
+    }
+  }
+
+  void _navigate(AppScreen screen, {String? pageId}) {
+    setState(() {
+      _screen = screen;
+      if (pageId != null) _activePageId = pageId;
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<AuthProvider>().removeListener(_onAuthChange);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return DottedBackground(
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          if (auth.isLoading) {
-            return const _LoadingScreen();
-          }
+          if (auth.isLoading) return const _LoadingScreen();
+
           if (!auth.isAuthenticated) {
-            return const LoginScreen();
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: _buildAuthScreen(),
+            );
           }
-          return const PageListScreen();
+
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _buildAppScreen(),
+          );
         },
       ),
     );
   }
+
+  Widget _buildAuthScreen() {
+    switch (_screen) {
+      case AppScreen.register:
+        return RegisterScreen(
+          key: const ValueKey('register'),
+          onSwitchToLogin: () => _navigate(AppScreen.login),
+        );
+      case AppScreen.forgotPassword:
+        return ForgotPasswordScreen(
+          key: const ValueKey('forgot'),
+          onBack: () => _navigate(AppScreen.login),
+        );
+      default:
+        return LoginScreen(
+          key: const ValueKey('login'),
+          onSwitchToRegister: () => _navigate(AppScreen.register),
+          onForgotPassword: () => _navigate(AppScreen.forgotPassword),
+        );
+    }
+  }
+
+  Widget _buildAppScreen() {
+    switch (_screen) {
+      case AppScreen.settings:
+        return SettingsScreen(
+          key: const ValueKey('settings'),
+          onBack: () => _navigate(AppScreen.pageList),
+        );
+      case AppScreen.tracker:
+        return TrackerScreen(
+          key: ValueKey('tracker_$_activePageId'),
+          pageId: _activePageId!,
+          onBack: () => _navigate(AppScreen.pageList),
+          onOpenSettings: () => _navigate(AppScreen.settings),
+        );
+      default:
+        return PageListScreen(
+          key: const ValueKey('pageList'),
+          onSelectPage: (id) => _navigate(AppScreen.tracker, pageId: id),
+          onOpenSettings: () => _navigate(AppScreen.settings),
+        );
+    }
+  }
 }
 
-/// Simple loading state shown while restoring a session.
 class _LoadingScreen extends StatelessWidget {
   const _LoadingScreen();
 
@@ -75,7 +181,7 @@ class _LoadingScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '\u70B9\u70B9',
+              '点点',
               style: AppFonts.pixel(fontSize: 36, color: AppColors.title),
             ),
             const SizedBox(height: 8),
@@ -84,7 +190,7 @@ class _LoadingScreen extends StatelessWidget {
               style: AppFonts.pixel(fontSize: 14, color: AppColors.subtitle),
             ),
             const SizedBox(height: 24),
-            SizedBox(
+            const SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(

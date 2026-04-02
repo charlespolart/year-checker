@@ -23,31 +23,17 @@ class AuthProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   Future<void> login(String email, String password) async {
-    _isLoading = true;
+    await _api.login(email, password);
+    _isAuthenticated = true;
+    _ws.connect();
     notifyListeners();
-
-    try {
-      await _api.login(email, password);
-      _isAuthenticated = true;
-      _ws.connect();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
   }
 
   Future<void> register(String email, String password) async {
-    _isLoading = true;
+    await _api.register(email, password);
+    _isAuthenticated = true;
+    _ws.connect();
     notifyListeners();
-
-    try {
-      await _api.register(email, password);
-      _isAuthenticated = true;
-      _ws.connect();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
   }
 
   Future<void> logout() async {
