@@ -8,6 +8,8 @@ import '../providers/legends_provider.dart';
 import '../providers/pages_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cell_editor_dialog.dart';
+import '../widgets/marquee_text.dart';
+import '../widgets/dashed_border.dart';
 import '../widgets/legend_editor_dialog.dart';
 import '../widgets/tracker_grid.dart';
 
@@ -28,7 +30,13 @@ class TrackerScreen extends StatefulWidget {
 }
 
 class _TrackerScreenState extends State<TrackerScreen> {
+  static const _sidebarExpandedLandscape = 150.0;
+  static const _sidebarExpandedPortrait = 90.0;
+  static const _sidebarExpandedTabletPortrait = 140.0;
+  static const _sidebarCollapsed = 32.0;
+
   bool _editingTitle = false;
+  bool _showLegendLabels = true;
   late TextEditingController _titleController;
 
   PageModel get _page {
@@ -68,6 +76,8 @@ class _TrackerScreenState extends State<TrackerScreen> {
     final lang = context.watch<LanguageProvider>();
     final cellsProv = context.watch<CellsProvider>();
     final legends = context.watch<LegendsProvider>().legends;
+    // Watch pages so title updates are reflected
+    context.watch<PagesProvider>();
 
     // Stats calculation
     final filledDays = cellsProv.cells.length;
@@ -76,158 +86,327 @@ class _TrackerScreenState extends State<TrackerScreen> {
     final yearPercent =
         daysInYear > 0 ? (filledDays / daysInYear * 100).round() : 0;
 
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final useWideLayout = isLandscape;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top bar
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
+        child: useWideLayout
+            ? _buildLandscapeLayout(lang, cellsProv, legends, filledDays, streak, yearPercent)
+            : _buildPortraitLayout(lang, cellsProv, legends, filledDays, streak, yearPercent),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: widget.onBack,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Text(
+                '<',
+                style: AppFonts.pixel(
+                  fontSize: 20,
+                  color: AppColors.accent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _editingTitle
+                ? TextField(
+                    controller: _titleController,
+                    autofocus: true,
+                    maxLength: 35,
+                    style: AppFonts.pixel(
+                      fontSize: 16,
+                      color: AppColors.title,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      counterText: '',
+                    ),
+                    onSubmitted: (_) => _saveTitle(),
+                    onTapOutside: (_) => _saveTitle(),
+                  )
+                : GestureDetector(
+                    onTap: () => setState(() => _editingTitle = true),
+                    child: Text(
+                      _page.title,
+                      style: AppFonts.pixel(
+                        fontSize: 16,
+                        color: AppColors.title,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+          ),
+          Text(
+            '${_page.year}',
+            style: AppFonts.pixel(
+              fontSize: 13,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrid(CellsProvider cellsProv) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Center(
+          child: TrackerGrid(
+            year: _page.year,
+            getCellColor: (month, day) => cellsProv.getCellColor(month, day),
+            onCellPress: (month, day) {
+              CellEditorDialog.show(context, month: month, day: day, year: _page.year);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookShell({
+    required LanguageProvider lang,
+    required CellsProvider cellsProv,
+    required List legends,
+    required int filledDays,
+    required int streak,
+    required int yearPercent,
+    bool fitWidth = false,
+  }) {
+    final content = Container(
+      decoration: BoxDecoration(
+        color: AppColors.shell,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.shellBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: DashedBorder(
+          color: AppColors.screenBorder,
+          borderRadius: 10,
+          dashLength: 5,
+          gapLength: 3,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.screen,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                _buildSidebar(
+                  lang: lang,
+                  legends: legends,
+                  filledDays: filledDays,
+                  streak: streak,
+                  yearPercent: yearPercent,
+                  isLandscape: fitWidth,
+                ),
+                DashedVerticalDivider(
+                  color: AppColors.screenBorder,
+                  dashLength: 4,
+                  gapLength: 3,
+                ),
+                _buildGrid(cellsProv),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (!fitWidth) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+        child: content,
+      );
+    }
+
+    // In fitWidth mode, calculate width from available height
+    // Grid: 13 cols × 32 rows, so width = height × 13/32
+    // Plus sidebar + divider + paddings
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availH = constraints.maxHeight - 8; // outer padding (4*2)
+        final gridH = availH - 16; // shell padding (8*2)
+        final gridW = gridH * 13 / 32;
+        final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+        final expandedSidebarW = isLandscape ? _sidebarExpandedLandscape : _sidebarExpandedPortrait;
+        final sidebarW = _showLegendLabels ? expandedSidebarW : _sidebarCollapsed;
+        final totalW = gridW + sidebarW + 1 + 12 + 16 + 18;
+        return Padding(
+          padding: EdgeInsets.all(fitWidth ? 4 : 8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: totalW.clamp(200, constraints.maxWidth),
+            child: content,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPortraitLayout(
+    LanguageProvider lang,
+    CellsProvider cellsProv,
+    List legends,
+    int filledDays,
+    int streak,
+    int yearPercent,
+  ) {
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+
+    return Column(
+      children: [
+        _buildTopBar(),
+        Expanded(
+          child: isTablet
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Calculate max width so grid fills height without vertical gap
+                    final availH = constraints.maxHeight - 20; // shell + grid paddings
+                    final gridCellH = availH / 32;
+                    final gridW = gridCellH * 13;
+                    final sidebarW = _showLegendLabels ? _sidebarExpandedTabletPortrait : _sidebarCollapsed;
+                    final maxW = gridW + sidebarW + 50; // divider + paddings
+                    return Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        constraints: BoxConstraints(maxWidth: maxW),
+                        child: _buildBookShell(
+                          lang: lang,
+                          cellsProv: cellsProv,
+                          legends: legends,
+                          filledDays: filledDays,
+                          streak: streak,
+                          yearPercent: yearPercent,
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : _buildBookShell(
+                  lang: lang,
+                  cellsProv: cellsProv,
+                  legends: legends,
+                  filledDays: filledDays,
+                  streak: streak,
+                  yearPercent: yearPercent,
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLandscapeLayout(
+    LanguageProvider lang,
+    CellsProvider cellsProv,
+    List legends,
+    int filledDays,
+    int streak,
+    int yearPercent,
+  ) {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left panel: back, title, year, stars
+          SizedBox(
+            width: 240,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8, right: 16, top: 8, bottom: 8),
+              child: Stack(
                 children: [
-                  GestureDetector(
-                    onTap: widget.onBack,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Text(
-                        '<',
-                        style: AppFonts.pixel(
-                          fontSize: 20,
-                          color: AppColors.accent,
+                  // Back button top-left
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    child: GestureDetector(
+                      onTap: widget.onBack,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Text(
+                          '<',
+                          style: AppFonts.pixel(fontSize: 22, color: AppColors.accent),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _editingTitle
-                        ? TextField(
-                            controller: _titleController,
-                            autofocus: true,
-                            style: AppFonts.pixel(
-                              fontSize: 16,
-                              color: AppColors.title,
-                            ),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            onSubmitted: (_) => _saveTitle(),
-                            onTapOutside: (_) => _saveTitle(),
-                          )
-                        : GestureDetector(
-                            onTap: () =>
-                                setState(() => _editingTitle = true),
-                            child: Text(
-                              _page.title,
-                              style: AppFonts.pixel(
-                                fontSize: 16,
-                                color: AppColors.title,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                  ),
-                  Text(
-                    '${_page.year}',
-                    style: AppFonts.pixel(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
+                  // Centered content
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () => setState(() => _editingTitle = true),
+                          child: _editingTitle
+                              ? TextField(
+                                  controller: _titleController,
+                                  autofocus: true,
+                                  maxLength: 35,
+                                  textAlign: TextAlign.center,
+                                  style: AppFonts.pixel(fontSize: 36, color: AppColors.title).copyWith(letterSpacing: 2),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                    counterText: '',
+                                  ),
+                                  onSubmitted: (_) => _saveTitle(),
+                                  onTapOutside: (_) => _saveTitle(),
+                                )
+                              : Text(
+                                  _page.title,
+                                  style: AppFonts.pixel(fontSize: 36, color: AppColors.title).copyWith(letterSpacing: 2),
+                                  textAlign: TextAlign.center,
+                                  softWrap: true,
+                                ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '~ ${_page.year} ~',
+                          style: AppFonts.dot(fontSize: 24, color: AppColors.subtitle, fontWeight: FontWeight.w500).copyWith(letterSpacing: 3),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(5, (_) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Icon(Icons.star_border, size: 26, color: AppColors.star),
+                          )),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Book shell
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.shell,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.shellBorder),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.screen,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppColors.screenBorder,
-                          style: BorderStyle.solid,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          // Sidebar: legends + stats + edit button
-                          _buildSidebar(
-                            lang: lang,
-                            legends: legends,
-                            filledDays: filledDays,
-                            streak: streak,
-                            yearPercent: yearPercent,
-                          ),
-
-                          // Vertical divider
-                          Container(
-                            width: 1,
-                            color: AppColors.screenBorder,
-                          ),
-
-                          // Grid
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                // Calculate dot size to fit 13 columns (1 label + 12 months)
-                                // and 32 rows (1 header + 31 days) in the available space.
-                                final availableWidth = constraints.maxWidth;
-                                final availableHeight = constraints.maxHeight;
-                                final dotFromWidth = availableWidth / 14.5;
-                                final dotFromHeight = availableHeight / 34.5;
-                                final dotSize =
-                                    dotFromWidth < dotFromHeight
-                                        ? dotFromWidth
-                                        : dotFromHeight;
-
-                                return Center(
-                                  child: SingleChildScrollView(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4),
-                                      child: TrackerGrid(
-                                        dotSize: dotSize.clamp(4.0, 18.0),
-                                        getCellColor: (month, day) =>
-                                            cellsProv.getCellColor(
-                                                month, day),
-                                        onCellPress: (month, day) {
-                                          CellEditorDialog.show(
-                                            context,
-                                            month: month,
-                                            day: day,
-                                            year: _page.year,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          // Grid shell — sized to fit
+          _buildBookShell(
+            lang: lang,
+            cellsProv: cellsProv,
+            legends: legends,
+            filledDays: filledDays,
+            streak: streak,
+            yearPercent: yearPercent,
+            fitWidth: true,
+          ),
+        ],
       ),
     );
   }
@@ -238,118 +417,235 @@ class _TrackerScreenState extends State<TrackerScreen> {
     required int filledDays,
     required int streak,
     required int yearPercent,
+    bool isLandscape = false,
   }) {
-    return SizedBox(
-      width: 72,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        child: Column(
+    final showLabels = _showLegendLabels;
+    final isTabletSidebar = MediaQuery.of(context).size.shortestSide >= 600;
+    final expandedW = isLandscape ? _sidebarExpandedLandscape : isTabletSidebar ? _sidebarExpandedTabletPortrait : _sidebarExpandedPortrait;
+    final collapsedW = _sidebarCollapsed;
+    final currentW = showLabels ? expandedW : collapsedW;
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final dotSize = isLandscape ? 16.0 : isTablet ? 18.0 : 14.0;
+    final labelFs = isLandscape ? 13.0 : isTablet ? 14.0 : 9.0;
+    final editFs = isLandscape ? 12.0 : isTablet ? 13.0 : 9.0;
+    final sectionFs = isLandscape ? 11.0 : isTablet ? 12.0 : 8.0;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: currentW,
+      clipBehavior: Clip.hardEdge,
+      decoration: const BoxDecoration(),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          width: currentW,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Column(
           children: [
-            // Legends label
-            Text(
-              lang.t('tracker.legend'),
-              style: AppFonts.pixel(
-                fontSize: 8,
-                color: AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: 6),
-
-            // Legend dots
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: legends.map<Widget>((legend) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _parseHex(legend.color),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              legend.label,
-                              style: AppFonts.dot(
-                                fontSize: 8,
-                                color: AppColors.text,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 4),
-
-            // Stats
-            Text(
-              lang.t('tracker.stats'),
-              style: AppFonts.pixel(
-                fontSize: 8,
-                color: AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: 4),
-            _buildStat('$filledDays', lang.t('tracker.statDays')),
-            _buildStat('$streak', lang.t('tracker.statStreak')),
-            _buildStat('$yearPercent%', lang.t('tracker.statYear')),
-
-            const SizedBox(height: 8),
-
-            // Edit legends button
+            // Toggle labels button
             GestureDetector(
-              onTap: () {
-                LegendEditorDialog.show(context, pageId: _page.id);
-              },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.inputBg,
-                  border: Border.all(color: AppColors.inputBorder),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  lang.t('tracker.editLegends'),
-                  style: AppFonts.pixel(
-                    fontSize: 8,
-                    color: AppColors.accent,
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _showLegendLabels = !_showLegendLabels),
+              child: SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 4, top: 2),
+                  child: Icon(
+                    showLabels ? Icons.chevron_left : Icons.chevron_right,
+                    size: 14,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ),
             ),
+
+            // Legend section title
+            _buildSectionHeader(lang.t('tracker.legend'), showLabels, sectionFs),
+
+            // Legend dots + edit button
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: showLabels ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                  children: [
+                    ...legends.map<Widget>((legend) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: showLabels
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: dotSize,
+                                    height: dotSize,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _parseHex(legend.color),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: MarqueeText(
+                                      text: legend.label,
+                                      style: AppFonts.dot(
+                                        fontSize: labelFs,
+                                        color: AppColors.text,
+                                      ).copyWith(height: 1.0),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Container(
+                                width: dotSize,
+                                height: dotSize,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _parseHex(legend.color),
+                                ),
+                              ),
+                      );
+                    }),
+                    // Edit button right after legends
+                    const SizedBox(height: 4),
+                    Center(child: GestureDetector(
+                      onTap: () {
+                        LegendEditorDialog.show(context, pageId: _page.id);
+                      },
+                      child: DashedBorder(
+                        color: AppColors.inputBorder,
+                        borderRadius: 4,
+                        dashLength: 3,
+                        gapLength: 2,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: showLabels ? 8 : 4,
+                          vertical: 5,
+                        ),
+                        child: showLabels
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit,
+                                    size: 10,
+                                    color: AppColors.accent,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    lang.t('tracker.editLegends'),
+                                    style: AppFonts.pixel(
+                                      fontSize: editFs,
+                                      color: AppColors.accent,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Icon(
+                                Icons.edit,
+                                size: 12,
+                                color: AppColors.accent,
+                              ),
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ),
+
+            // Stats at bottom
+            _buildSectionHeader(lang.t('tracker.stats'), showLabels, sectionFs),
+            if (showLabels && (isLandscape || isTablet)) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildStat('$filledDays', lang.t('tracker.statDays'), fontSize: isTablet && !isLandscape ? 13.0 : 15.0),
+                  _buildStat('$streak', lang.t('tracker.statStreak'), fontSize: isTablet && !isLandscape ? 13.0 : 15.0),
+                  _buildStat('$yearPercent%', lang.t('tracker.statYear'), fontSize: isTablet && !isLandscape ? 13.0 : 15.0),
+                ],
+              ),
+            ] else if (showLabels) ...[
+              _buildStat('$filledDays', lang.t('tracker.statDays')),
+              _buildStat('$streak', lang.t('tracker.statStreak')),
+              _buildStat('$yearPercent%', lang.t('tracker.statYear')),
+            ] else ...[
+              _buildMiniStat(Icons.grid_view, '$filledDays'),
+              const SizedBox(height: 2),
+              CustomPaint(
+                size: const Size(double.infinity, 1),
+                painter: _DashedLinePainter(color: AppColors.screenBorder),
+              ),
+              const SizedBox(height: 2),
+              _buildMiniStat(Icons.local_fire_department, '$streak'),
+              const SizedBox(height: 2),
+              CustomPaint(
+                size: const Size(double.infinity, 1),
+                painter: _DashedLinePainter(color: AppColors.screenBorder),
+              ),
+              const SizedBox(height: 2),
+              _buildMiniStat(Icons.percent, '$yearPercent'),
+            ],
           ],
         ),
+      ),
+      ),
       ),
     );
   }
 
-  Widget _buildStat(String value, String label) {
+  Widget _buildSectionHeader(String label, bool expanded, [double fontSize = 9]) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(
+        children: [
+          if (expanded) ...[
+            Text(
+              label,
+              style: AppFonts.pixel(
+                fontSize: fontSize,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 3),
+            FractionallySizedBox(
+              widthFactor: 0.5,
+              child: CustomPaint(
+                size: const Size(double.infinity, 1),
+                painter: _DashedLinePainter(color: AppColors.screenBorder),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(IconData icon, String value) {
+    return Column(
+      children: [
+        Icon(icon, size: 12, color: AppColors.textMuted),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppFonts.pixel(fontSize: 12, color: AppColors.title),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStat(String value, String label, {double fontSize = 13}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
       child: Column(
         children: [
           Text(
             value,
-            style: AppFonts.pixel(fontSize: 11, color: AppColors.title),
+            style: AppFonts.pixel(fontSize: fontSize, color: AppColors.title),
           ),
           Text(
             label,
-            style: AppFonts.dot(fontSize: 7, color: AppColors.textMuted),
+            style: AppFonts.dot(fontSize: fontSize * 0.7, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -393,4 +689,28 @@ class _TrackerScreenState extends State<TrackerScreen> {
   bool _isLeapYear(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
   }
+}
+
+class _DashedLinePainter extends CustomPainter {
+  final Color color;
+
+  _DashedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5;
+
+    double x = 0;
+    const dash = 3.0;
+    const gap = 2.0;
+    while (x < size.width) {
+      canvas.drawLine(Offset(x, 0), Offset((x + dash).clamp(0, size.width), 0), paint);
+      x += dash + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedLinePainter old) => old.color != color;
 }
