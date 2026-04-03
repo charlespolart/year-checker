@@ -38,14 +38,15 @@ dependencies:
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^10.0.0
   web_socket_channel: ^3.0.3
-  google_fonts: ^8.0.2
   provider: ^6.1.5+1
   audioplayers: ^6.6.0
+  flutter_svg: ^2.0.17
   url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -68,6 +69,7 @@ flutter:
   assets:
     - assets/images/
     - assets/sounds/
+    - assets/icons/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -93,5 +95,27 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+  fonts:
+    - family: Silkscreen
+      fonts:
+        - asset: assets/fonts/Silkscreen-Regular.ttf
+        - asset: assets/fonts/Silkscreen-Bold.ttf
+          weight: 700
+    - family: DotGothic16
+      fonts:
+        - asset: assets/fonts/DotGothic16-Regular.ttf
+
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+    image_path: "assets/images/icon.png"
+    background_color: "#F5F0D0"
+    theme_color: "#F5F0D0"
+  image_path: "assets/images/icon.png"
+  adaptive_icon_background: "#F5F0D0"
+  adaptive_icon_foreground: "assets/images/icon.png"

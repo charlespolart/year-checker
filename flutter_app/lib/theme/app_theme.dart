@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   AppColors._();
@@ -44,7 +43,8 @@ class AppFonts {
     Color color = AppColors.text,
     FontWeight fontWeight = FontWeight.w400,
   }) {
-    return GoogleFonts.silkscreen(
+    return TextStyle(
+      fontFamily: 'Silkscreen',
       fontSize: fontSize,
       color: color,
       fontWeight: fontWeight,
@@ -57,7 +57,8 @@ class AppFonts {
     Color color = AppColors.text,
     FontWeight fontWeight = FontWeight.w400,
   }) {
-    return GoogleFonts.dotGothic16(
+    return TextStyle(
+      fontFamily: 'DotGothic16',
       fontSize: fontSize,
       color: color,
       fontWeight: fontWeight,
