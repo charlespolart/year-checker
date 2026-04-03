@@ -4,17 +4,16 @@ import '../theme/app_theme.dart';
 
 /// The year grid widget: 12 months x 31 days of colored dots.
 ///
-/// [dotSize] controls the diameter of each dot.
-/// [getCellColor] returns a hex color for the given (month, day) or `null`.
-/// [onCellPress] is called when a dot is tapped.
+/// Fills all available space, using the constraining axis (width or height)
+/// to determine the cell size.
 class TrackerGrid extends StatelessWidget {
-  final double dotSize;
+  final int year;
   final String? Function(int month, int day) getCellColor;
   final void Function(int month, int day) onCellPress;
 
   const TrackerGrid({
     super.key,
-    required this.dotSize,
+    required this.year,
     required this.getCellColor,
     required this.onCellPress,
   });
@@ -23,6 +22,9 @@ class TrackerGrid extends StatelessWidget {
     'J', 'F', 'M', 'A', 'M', 'J',
     'J', 'A', 'S', 'O', 'N', 'D',
   ];
+
+  static const int _cols = 13; // 1 label + 12 months
+  static const int _rows = 32; // 1 header + 31 days
 
   static int getDaysInMonth(int month, int year) {
     if (month == 2) {
@@ -41,88 +43,112 @@ class TrackerGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gap = (dotSize * 0.25).clamp(1.0, 4.0);
-    final labelSize = (dotSize * 0.7).clamp(6.0, 11.0);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Each cell = dotSize + gap. We pick the axis that constrains us.
+        final hasW = constraints.maxWidth.isFinite;
+        final hasH = constraints.maxHeight.isFinite;
+        final cellW = hasW ? constraints.maxWidth / _cols : double.infinity;
+        final cellH = hasH ? constraints.maxHeight / _rows : double.infinity;
+        final cellSize = cellW < cellH ? cellW : cellH;
+        final dotSize = cellSize * 0.78;
+        final labelSize = (dotSize * 0.65).clamp(6.0, 12.0);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Month headers row
-        Row(
-          children: [
-            // Spacer for day label column
-            SizedBox(width: dotSize + gap),
-            ...List.generate(12, (m) {
-              return SizedBox(
-                width: dotSize + gap,
-                child: Center(
-                  child: Text(
-                    _monthLabels[m],
-                    style: AppFonts.pixel(
-                      fontSize: labelSize,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-        SizedBox(height: gap),
-        // Day rows (1..31)
-        ...List.generate(31, (dayIdx) {
-          final day = dayIdx + 1;
-          return Padding(
-            padding: EdgeInsets.only(bottom: gap),
-            child: Row(
-              children: [
-                // Day label
-                SizedBox(
-                  width: dotSize + gap,
-                  child: Center(
-                    child: Text(
-                      '$day',
-                      style: AppFonts.pixel(
-                        fontSize: labelSize,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ),
-                ),
-                // Month cells for this day
-                ...List.generate(12, (mIdx) {
-                  final month = mIdx + 1;
-                  final color = getCellColor(month, day);
-                  final valid = day <= 31; // always render the slot
+        // Total grid size
+        final gridW = cellSize * _cols;
+        final gridH = cellSize * _rows;
 
-                  return Padding(
-                    padding: EdgeInsets.only(right: gap),
-                    child: GestureDetector(
-                      onTap: valid ? () => onCellPress(month, day) : null,
-                      child: Container(
-                        width: dotSize,
-                        height: dotSize,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: color != null
-                              ? _parseColor(color)
-                              : AppColors.dotEmpty,
-                          border: color == null
-                              ? Border.all(
-                                  color: AppColors.dotBorder,
-                                  width: 0.5,
-                                )
-                              : null,
+        return SizedBox(
+          width: gridW,
+          height: gridH,
+          child: Column(
+            children: [
+              // Month headers row
+              SizedBox(
+                height: cellSize,
+                child: Row(
+                  children: [
+                    SizedBox(width: cellSize),
+                    ...List.generate(12, (m) {
+                      return SizedBox(
+                        width: cellSize,
+                        child: Center(
+                          child: Text(
+                            _monthLabels[m],
+                            style: AppFonts.pixel(
+                              fontSize: labelSize,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              // Day rows (1..31)
+              ...List.generate(31, (dayIdx) {
+                final day = dayIdx + 1;
+                return SizedBox(
+                  height: cellSize,
+                  child: Row(
+                    children: [
+                      // Day label
+                      SizedBox(
+                        width: cellSize,
+                        child: Center(
+                          child: Text(
+                            '$day',
+                            style: AppFonts.pixel(
+                              fontSize: labelSize,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          );
-        }),
-      ],
+                      // Month cells
+                      ...List.generate(12, (mIdx) {
+                        final month = mIdx + 1;
+                        final maxDays = getDaysInMonth(month, year);
+                        final valid = day <= maxDays;
+                        final color = valid ? getCellColor(month, day) : null;
+
+                        return SizedBox(
+                          width: cellSize,
+                          height: cellSize,
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: valid ? () => onCellPress(month, day) : null,
+                              child: valid
+                                  ? Container(
+                                      width: dotSize,
+                                      height: dotSize,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: color != null
+                                            ? _parseColor(color)
+                                            : AppColors.dotEmpty,
+                                        border: color == null
+                                            ? Border.all(
+                                                color: AppColors.dotBorder,
+                                                width: 0.5,
+                                              )
+                                            : null,
+                                      ),
+                                    )
+                                  : SizedBox(width: dotSize, height: dotSize),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 }

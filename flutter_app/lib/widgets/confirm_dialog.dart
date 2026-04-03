@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'app_dialog.dart';
 
 /// A custom confirmation dialog that matches the warm cream pixel aesthetic.
 ///
@@ -44,12 +45,7 @@ class ConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.shell,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.shellBorder),
-      ),
+    return AppDialog(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
