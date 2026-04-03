@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/confirm_dialog.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -173,32 +174,14 @@ class SettingsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        children: [
-          _buildLanguageOption(
+        children: Language.values.map((language) {
+          return _buildLanguageOption(
             context,
             lang: lang,
-            language: Language.fr,
-            label: lang.t('settings.french'),
-          ),
-          _buildLanguageOption(
-            context,
-            lang: lang,
-            language: Language.en,
-            label: lang.t('settings.english'),
-          ),
-          _buildLanguageOption(
-            context,
-            lang: lang,
-            language: Language.zhCN,
-            label: lang.t('settings.chineseSimplified'),
-          ),
-          _buildLanguageOption(
-            context,
-            lang: lang,
-            language: Language.zhTW,
-            label: lang.t('settings.chineseTraditional'),
-          ),
-        ],
+            language: language,
+            label: lang.t(languageNameKeys[language]!),
+          );
+        }).toList(),
       ),
     );
   }
@@ -315,13 +298,10 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context,
     LanguageProvider lang,
   ) async {
-    final confirmed = await ConfirmDialog.show(
-      context,
-      title: lang.t('settings.deleteAccount'),
-      message: lang.t('settings.deleteAccountConfirm'),
-      confirmLabel: lang.t('common.delete'),
-      cancelLabel: lang.t('common.cancel'),
-      destructive: true,
+    final email = context.read<AuthProvider>().email;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => _DeleteAccountDialog(lang: lang, email: email),
     );
 
     if (confirmed == true && context.mounted) {
@@ -334,5 +314,142 @@ class SettingsScreen extends StatelessWidget {
         debugPrint('Delete account failed: $e');
       }
     }
+  }
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  final LanguageProvider lang;
+  final String? email;
+
+  const _DeleteAccountDialog({required this.lang, this.email});
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _controller = TextEditingController();
+  bool _canConfirm = false;
+
+  String get _confirmText => widget.email ?? 'DELETE';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final match = _controller.text.trim() == _confirmText;
+      if (match != _canConfirm) setState(() => _canConfirm = match);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = widget.lang;
+
+    return AppDialog(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              lang.t('settings.deleteAccount'),
+              style: AppFonts.pixel(fontSize: 16, color: AppColors.btnResetText),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              lang.t('settings.deleteAccountConfirm'),
+              style: AppFonts.dot(fontSize: 13, color: AppColors.text),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              widget.email != null
+                  ? lang.t('settings.typeEmail')
+                  : lang.t('settings.typeDelete'),
+              style: AppFonts.dot(fontSize: 12, color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _controller,
+              style: AppFonts.dot(fontSize: 14, color: AppColors.inputText),
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: _confirmText,
+                hintStyle: AppFonts.dot(fontSize: 14, color: AppColors.textMuted),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    lang.t('common.cancel'),
+                    style: AppFonts.pixel(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                GestureDetector(
+                  onTap: _canConfirm
+                      ? () => Navigator.of(context).pop(true)
+                      : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _canConfirm ? AppColors.btnReset : AppColors.dotEmpty,
+                      border: Border.all(
+                        color: _canConfirm
+                            ? AppColors.btnResetBorder
+                            : AppColors.dotBorder,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          size: 14,
+                          color: _canConfirm
+                              ? AppColors.btnResetText
+                              : AppColors.textMuted,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          lang.t('common.delete'),
+                          style: AppFonts.pixel(
+                            fontSize: 12,
+                            color: _canConfirm
+                                ? AppColors.btnResetText
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
