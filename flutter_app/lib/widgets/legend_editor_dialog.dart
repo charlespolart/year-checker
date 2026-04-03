@@ -36,10 +36,15 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
   int? _draggingIndex;
   // When non-null, we're picking a color for this legend index
   int? _recolorIndex;
-  List<String> _customRow = [
-    '#E8E8E8', '#C8C8C8', '#A8A8A8',
-    '#888888', '#686868', '#484848',
-  ];
+  late List<List<String>> _palette;
+
+  @override
+  void initState() {
+    super.initState();
+    _legends = List.of(context.read<LegendsProvider>().legends);
+    // Deep copy the default palette so edits don't affect the original
+    _palette = AppTheme.defaultPalette.map((row) => List<String>.from(row)).toList();
+  }
 
   Color _parseHex(String hex) {
     final cleaned = hex.replaceFirst('#', '');
@@ -47,12 +52,6 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
   }
 
   LegendsProvider get _prov => context.read<LegendsProvider>();
-
-  @override
-  void initState() {
-    super.initState();
-    _legends = List.of(context.read<LegendsProvider>().legends);
-  }
 
   @override
   void dispose() {
@@ -85,7 +84,6 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Title
             Opacity(
@@ -111,8 +109,7 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
                 ),
               )
             else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 280),
+              Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   child: Column(
@@ -195,6 +192,7 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
                       ),
                       decoration: InputDecoration(
                         hintText: lang.t('tracker.legendPlaceholder'),
+                        counterText: '',
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 8,
@@ -293,10 +291,11 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
     }
   }
 
-  Widget _buildColorDot(String hex, String pos) {
+  Widget _buildColorDot(String hex, String pos, {VoidCallback? onLongPress}) {
     final isSelected = _selectedPos == pos && _recolorIndex == null;
     return GestureDetector(
       onTap: () => _onPaletteColorTap(hex, pos),
+      onLongPress: onLongPress,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 3),
         width: 28,
@@ -312,38 +311,16 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
     );
   }
 
-  Widget _buildCustomColorDot(int index) {
-    final hex = _customRow[index];
-    final pos = 'custom,$index';
-    final isSelected = _selectedPos == pos && _recolorIndex == null;
-    return GestureDetector(
-      onTap: () => _onPaletteColorTap(hex, pos),
-      onLongPress: () => _editCustomColor(index),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _parseHex(hex),
-          border: isSelected
-              ? Border.all(color: AppColors.accent, width: 2.5)
-              : Border.all(color: AppColors.dotBorder, width: 0.5),
-        ),
-      ),
-    );
-  }
-
-  void _editCustomColor(int index) {
+  void _editPaletteColor(int rowIdx, int colIdx) {
     showDialog(
       context: context,
       builder: (_) => _ColorPickerDialog(
-        initialColor: _parseHex(_customRow[index]),
+        initialColor: _parseHex(_palette[rowIdx][colIdx]),
         onColorSelected: (hex) {
           setState(() {
-            _customRow[index] = hex;
+            _palette[rowIdx][colIdx] = hex;
             _selectedColor = hex;
-            _selectedPos = 'custom,$index';
+            _selectedPos = '$rowIdx,$colIdx';
           });
         },
       ),
@@ -354,64 +331,34 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Default palette rows
-        ...List.generate(AppTheme.defaultPalette.length, (rowIdx) {
-          final row = AppTheme.defaultPalette[rowIdx];
+        ...List.generate(_palette.length, (rowIdx) {
+          final row = _palette[rowIdx];
           return Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(row.length, (colIdx) {
-                return _buildColorDot(row[colIdx], '$rowIdx,$colIdx');
+                return _buildColorDot(
+                  row[colIdx],
+                  '$rowIdx,$colIdx',
+                  onLongPress: () => _editPaletteColor(rowIdx, colIdx),
+                );
               }),
             ),
           );
         }),
-        // Separator + custom row
-        ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Expanded(
-                  child: CustomPaint(
-                    size: const Size(double.infinity, 1),
-                    painter: _DashedHLinePainter(color: AppColors.sectionBorder),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    'custom',
-                    style: AppFonts.pixel(fontSize: 8, color: AppColors.textMuted),
-                  ),
-                ),
-                Expanded(
-                  child: CustomPaint(
-                    size: const Size(double.infinity, 1),
-                    painter: _DashedHLinePainter(color: AppColors.sectionBorder),
-                  ),
-                ),
-              ],
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.touch_app, size: 10, color: AppColors.textMuted),
+            const SizedBox(width: 3),
+            Text(
+              'long press to edit',
+              style: AppFonts.dot(fontSize: 9, color: AppColors.textMuted),
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(6, (i) => _buildCustomColorDot(i)),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.touch_app, size: 10, color: AppColors.textMuted),
-              const SizedBox(width: 3),
-              Text(
-                'long press to edit',
-                style: AppFonts.dot(fontSize: 9, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ],
     );
   }
@@ -898,6 +845,7 @@ class _DraggableLegendTileState extends State<_DraggableLegendTile> {
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
+                        counterText: '',
                       ),
                       onSubmitted: (_) => _submitEdit(),
                     )

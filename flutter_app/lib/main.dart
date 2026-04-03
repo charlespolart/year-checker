@@ -13,6 +13,7 @@ import 'screens/page_list_screen.dart';
 import 'screens/tracker_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/custom_cursor.dart';
 import 'widgets/dotted_background.dart';
 import 'widgets/undo_delete_bar.dart';
 
@@ -48,6 +49,7 @@ class DianDianApp extends StatelessWidget {
             },
           ),
         ),
+        builder: (context, child) => CustomCursorOverlay(child: child!),
         home: const AppShell(),
       ),
     );

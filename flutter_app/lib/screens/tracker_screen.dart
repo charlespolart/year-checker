@@ -273,39 +273,31 @@ class _TrackerScreenState extends State<TrackerScreen> {
       children: [
         _buildTopBar(),
         Expanded(
-          child: isTablet
-              ? LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Calculate max width so grid fills height without vertical gap
-                    final availH = constraints.maxHeight - 20; // shell + grid paddings
-                    final gridCellH = availH / 32;
-                    final gridW = gridCellH * 13;
-                    final sidebarW = _showLegendLabels ? _sidebarExpandedTabletPortrait : _sidebarCollapsed;
-                    final maxW = gridW + sidebarW + 50; // divider + paddings
-                    return Center(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        constraints: BoxConstraints(maxWidth: maxW),
-                        child: _buildBookShell(
-                          lang: lang,
-                          cellsProv: cellsProv,
-                          legends: legends,
-                          filledDays: filledDays,
-                          streak: streak,
-                          yearPercent: yearPercent,
-                        ),
-                      ),
-                    );
-                  },
-                )
-              : _buildBookShell(
-                  lang: lang,
-                  cellsProv: cellsProv,
-                  legends: legends,
-                  filledDays: filledDays,
-                  streak: streak,
-                  yearPercent: yearPercent,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final availH = constraints.maxHeight - 20;
+              final gridCellH = availH / 32;
+              final gridW = gridCellH * 13;
+              final sidebarW = _showLegendLabels
+                  ? (isTablet ? _sidebarExpandedTabletPortrait : _sidebarExpandedPortrait)
+                  : _sidebarCollapsed;
+              final maxW = gridW + sidebarW + 50;
+              return Center(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  constraints: BoxConstraints(maxWidth: maxW),
+                  child: _buildBookShell(
+                    lang: lang,
+                    cellsProv: cellsProv,
+                    legends: legends,
+                    filledDays: filledDays,
+                    streak: streak,
+                    yearPercent: yearPercent,
+                  ),
                 ),
+              );
+            },
+          ),
         ),
       ],
     );
