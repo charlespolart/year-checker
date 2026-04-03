@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -12,8 +13,11 @@ class PagesProvider extends ChangeNotifier {
   RemoveListener? _removeWsListener;
 
   List<PageModel> _pages = [];
+  PageModel? _pendingDeletePage;
+  Timer? _deleteTimer;
 
   List<PageModel> get pages => _pages;
+  PageModel? get pendingDeletePage => _pendingDeletePage;
 
   PagesProvider() {
     _removeWsListener = _ws.addListener(_onWsMessage);
@@ -43,12 +47,14 @@ class PagesProvider extends ChangeNotifier {
       final response = await _api.apiFetch(
         '/api/pages',
         method: 'POST',
-        body: {'title': title},
+        body: {'title': title, 'position': _pages.length},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final page = PageModel.fromJson(_parsePalette(json));
-        _pages.add(page);
+        if (!_pages.any((p) => p.id == page.id)) {
+          _pages.add(page);
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -74,6 +80,83 @@ class PagesProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('PagesProvider: updatePage failed: $e');
+    }
+  }
+
+  Future<void> reorderPages(List<String> ids) async {
+    // Optimistic: reorder local list and update positions
+    final reordered = <PageModel>[];
+    for (int i = 0; i < ids.length; i++) {
+      try {
+        final page = _pages.firstWhere((p) => p.id == ids[i]);
+        reordered.add(page.copyWith(position: i));
+      } catch (_) {}
+    }
+    // Keep pages not in ids list unchanged
+    final otherPages = _pages.where((p) => !ids.contains(p.id)).toList();
+    _pages = [...reordered, ...otherPages];
+    notifyListeners();
+
+    // Update positions on server
+    for (int i = 0; i < ids.length; i++) {
+      _api.apiFetch(
+        '/api/pages/${ids[i]}',
+        method: 'PATCH',
+        body: {'position': i},
+      );
+    }
+  }
+
+  /// Soft-delete a page: remove locally, start timer, delete on server after delay.
+  void softDeletePage(PageModel page, {Duration delay = const Duration(seconds: 8)}) {
+    // Cancel any previous pending delete
+    _commitPendingDelete();
+
+    _pendingDeletePage = page;
+    _pages.removeWhere((p) => p.id == page.id);
+    notifyListeners();
+
+    _deleteTimer = Timer(delay, () {
+      _commitPendingDelete();
+    });
+  }
+
+  /// Undo a pending soft delete.
+  void undoDeletePage() {
+    _deleteTimer?.cancel();
+    _deleteTimer = null;
+    final page = _pendingDeletePage;
+    if (page != null) {
+      _pendingDeletePage = null;
+      if (!_pages.any((p) => p.id == page.id)) {
+        _pages.add(page);
+      }
+      notifyListeners();
+    }
+  }
+
+  /// Cancel pending delete without committing (used on logout).
+  void cancelPendingDelete() {
+    _deleteTimer?.cancel();
+    _deleteTimer = null;
+    final page = _pendingDeletePage;
+    if (page != null) {
+      _pendingDeletePage = null;
+      if (!_pages.any((p) => p.id == page.id)) {
+        _pages.add(page);
+      }
+      notifyListeners();
+    }
+  }
+
+  void _commitPendingDelete() {
+    _deleteTimer?.cancel();
+    _deleteTimer = null;
+    final page = _pendingDeletePage;
+    if (page != null) {
+      _pendingDeletePage = null;
+      deletePage(page.id);
+      notifyListeners();
     }
   }
 

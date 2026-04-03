@@ -20,29 +20,29 @@ class PageModel {
   factory PageModel.fromJson(Map<String, dynamic> json) {
     return PageModel(
       id: json['id'] as String,
-      userId: json['user_id'] as String,
-      title: json['title'] as String,
-      year: json['year'] as int,
-      position: json['position'] as int,
+      userId: (json['userId'] ?? json['user_id'] ?? '') as String,
+      title: (json['title'] ?? 'Tracker') as String,
+      year: (json['year'] ?? DateTime.now().year) as int,
+      position: (json['position'] ?? 0) as int,
       palette: json['palette'] != null
           ? (json['palette'] as List<dynamic>)
               .map((row) =>
                   (row as List<dynamic>).map((c) => c as String).toList())
               .toList()
           : null,
-      createdAt: json['created_at'] as String,
+      createdAt: (json['createdAt'] ?? json['created_at'] ?? '') as String,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'user_id': userId,
+      'userId': userId,
       'title': title,
       'year': year,
       'position': position,
       'palette': palette,
-      'created_at': createdAt,
+      'createdAt': createdAt,
     };
   }
 

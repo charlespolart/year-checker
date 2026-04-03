@@ -17,12 +17,12 @@ class CellModel {
 
   factory CellModel.fromJson(Map<String, dynamic> json) {
     return CellModel(
-      pageId: json['page_id'] as String,
-      month: json['month'] as int,
-      day: json['day'] as int,
-      color: json['color'] as String,
+      pageId: (json['pageId'] ?? json['page_id'] ?? '') as String,
+      month: (json['month'] ?? 1) as int,
+      day: (json['day'] ?? 1) as int,
+      color: (json['color'] ?? '') as String,
       comment: json['comment'] as String?,
-      updatedAt: json['updated_at'] as String,
+      updatedAt: (json['updatedAt'] ?? json['updated_at'] ?? '') as String,
     );
   }
 

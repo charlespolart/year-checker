@@ -13,6 +13,7 @@ class CellsProvider extends ChangeNotifier {
 
   String? _currentPageId;
   List<CellModel> _cells = [];
+  final Map<String, List<CellModel>> _previewCache = {};
 
   String? get currentPageId => _currentPageId;
   List<CellModel> get cells => _cells;
@@ -32,6 +33,25 @@ class CellsProvider extends ChangeNotifier {
 
     if (id != null) {
       await _fetchCells();
+    }
+  }
+
+  /// Returns cached preview cells for a page (used by PageListScreen cards).
+  List<CellModel> getPreviewCells(String pageId) => _previewCache[pageId] ?? [];
+
+  /// Fetches cells for preview without changing the active page.
+  Future<void> fetchPreviewCells(String pageId) async {
+    try {
+      final response = await _api.apiFetch('/api/cells/$pageId');
+      if (response.statusCode == 200) {
+        final list = jsonDecode(response.body) as List<dynamic>;
+        _previewCache[pageId] = list
+            .map((json) => CellModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('CellsProvider: fetchPreviewCells failed: $e');
     }
   }
 
@@ -70,7 +90,7 @@ class CellsProvider extends ChangeNotifier {
 
     try {
       final response = await _api.apiFetch(
-        '/api/pages/$_currentPageId/cells',
+        '/api/cells/$_currentPageId',
         method: 'PUT',
         body: {
           'month': month,
@@ -110,8 +130,9 @@ class CellsProvider extends ChangeNotifier {
 
     try {
       final response = await _api.apiFetch(
-        '/api/pages/$_currentPageId/cells/$month/$day',
+        '/api/cells/$_currentPageId',
         method: 'DELETE',
+        body: {'month': month, 'day': day},
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -123,6 +144,30 @@ class CellsProvider extends ChangeNotifier {
       debugPrint('CellsProvider: deleteCell failed: $e');
       _cells.add(previous);
       notifyListeners();
+    }
+  }
+
+  /// Recolor cells: swap oldColor → newColor on the current page.
+  Future<void> recolorCells(Map<String, String> colorMap) async {
+    if (_currentPageId == null) return;
+
+    // Optimistic update
+    for (final cell in _cells) {
+      final newColor = colorMap[cell.color];
+      if (newColor != null) {
+        _cells[_cells.indexOf(cell)] = cell.copyWith(color: newColor);
+      }
+    }
+    notifyListeners();
+
+    try {
+      await _api.apiFetch(
+        '/api/cells/$_currentPageId/recolor',
+        method: 'PATCH',
+        body: {'colorMap': colorMap},
+      );
+    } catch (e) {
+      debugPrint('CellsProvider: recolorCells failed: $e');
     }
   }
 
@@ -143,7 +188,7 @@ class CellsProvider extends ChangeNotifier {
 
       case 'cell:deleted':
         final json = message.data as Map<String, dynamic>;
-        final pageId = json['page_id'] as String?;
+        final pageId = (json['pageId'] ?? json['page_id']) as String?;
         final month = json['month'] as int?;
         final day = json['day'] as int?;
         if (pageId == _currentPageId && month != null && day != null) {
@@ -154,7 +199,7 @@ class CellsProvider extends ChangeNotifier {
 
       case 'cells:reset':
         final json = message.data as Map<String, dynamic>;
-        final pageId = json['page_id'] as String?;
+        final pageId = (json['pageId'] ?? json['page_id']) as String?;
         if (pageId == _currentPageId) {
           _cells = [];
           notifyListeners();
@@ -163,7 +208,7 @@ class CellsProvider extends ChangeNotifier {
 
       case 'cells:recolored':
         final json = message.data as Map<String, dynamic>;
-        final pageId = json['page_id'] as String?;
+        final pageId = (json['pageId'] ?? json['page_id']) as String?;
         if (pageId == _currentPageId) {
           final updated = json['cells'] as List<dynamic>?;
           if (updated != null) {
@@ -184,7 +229,7 @@ class CellsProvider extends ChangeNotifier {
 
   Future<void> _fetchCells() async {
     try {
-      final response = await _api.apiFetch('/api/pages/$_currentPageId/cells');
+      final response = await _api.apiFetch('/api/cells/$_currentPageId');
       if (response.statusCode == 200) {
         final list = jsonDecode(response.body) as List<dynamic>;
         _cells = list

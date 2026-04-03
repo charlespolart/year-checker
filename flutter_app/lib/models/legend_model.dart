@@ -18,11 +18,11 @@ class LegendModel {
   factory LegendModel.fromJson(Map<String, dynamic> json) {
     return LegendModel(
       id: json['id'] as String,
-      pageId: json['page_id'] as String,
-      color: json['color'] as String,
-      label: json['label'] as String,
-      position: json['position'] as int,
-      createdAt: json['created_at'] as String,
+      pageId: (json['pageId'] ?? json['page_id'] ?? '') as String,
+      color: (json['color'] ?? '') as String,
+      label: (json['label'] ?? '') as String,
+      position: (json['position'] ?? 0) as int,
+      createdAt: (json['createdAt'] ?? json['created_at'] ?? '') as String,
     );
   }
 
