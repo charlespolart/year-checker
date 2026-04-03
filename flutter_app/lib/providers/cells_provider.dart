@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 
 import '../models/cell_model.dart';
 import '../services/api_service.dart';
+import '../services/audio_service.dart';
 import '../services/ws_service.dart';
 
 class CellsProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
+  final AudioService _audio = AudioService();
   final WsService _ws = WsService();
   RemoveListener? _removeWsListener;
 
@@ -87,6 +89,7 @@ class CellsProvider extends ChangeNotifier {
     // Apply optimistic update
     _upsertCell(optimistic);
     notifyListeners();
+    _audio.playTap();
 
     try {
       final response = await _api.apiFetch(
@@ -127,6 +130,7 @@ class CellsProvider extends ChangeNotifier {
     // Apply optimistic delete
     _cells.removeWhere((c) => c.month == month && c.day == day);
     notifyListeners();
+    _audio.playErase();
 
     try {
       final response = await _api.apiFetch(

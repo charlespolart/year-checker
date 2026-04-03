@@ -71,12 +71,12 @@ class AppTheme {
 
   /// Default 6x6 pastel color palette.
   static const List<List<String>> defaultPalette = [
-    ['#F8B4B4', '#F8D0A0', '#F8E8A0', '#C8E8A0', '#A0D8E8', '#C0B8E8'],
-    ['#F4A0A0', '#F4C088', '#F4D888', '#B0D888', '#88C8D8', '#A8A0D8'],
-    ['#E88888', '#E8A870', '#E8C870', '#98C870', '#70B0C8', '#9088C8'],
-    ['#D87070', '#D89058', '#D8B058', '#80B058', '#5898B0', '#7870B0'],
-    ['#C85858', '#C87840', '#C89840', '#689840', '#408098', '#605898'],
-    ['#B84040', '#B86030', '#B88030', '#508030', '#306880', '#484080'],
+    ['#FFE5EC', '#FFE8D6', '#FFF9DB', '#E6F4EA', '#E7F5FF', '#F3F0FF'],
+    ['#FFC2D1', '#FFD1B0', '#FFF3BF', '#C7E9C0', '#D0EBFF', '#E5DBFF'],
+    ['#FF9EB8', '#FFBA8A', '#FFEC99', '#A8D8A8', '#A5D8FF', '#D0BFFF'],
+    ['#FF7AA0', '#FFA364', '#FFE066', '#7BC47F', '#74C0FC', '#B197FC'],
+    ['#FF5C8A', '#FF8C42', '#FFD43B', '#4CAF50', '#4DABF7', '#9775FA'],
+    ['#E8456B', '#E06A20', '#E6B800', '#2E7D32', '#1976D2', '#6A1FC0'],
   ];
 
   static ThemeData get themeData {
