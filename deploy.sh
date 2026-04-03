@@ -8,7 +8,7 @@ export NVM_DIR="$HOME/.nvm"
 SERVICE_NAME="diandian"
 WORKING_DIR="/root/dian-dian"
 BACKEND_DIR="$WORKING_DIR/backend"
-FRONTEND_DIR="$WORKING_DIR/frontend"
+FLUTTER_DIR="$WORKING_DIR/flutter_app"
 SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
 NODE_VERSION=$(nvm current)
 NODE_PATH="$HOME/.nvm/versions/node/$NODE_VERSION/bin/node"
@@ -27,7 +27,7 @@ echo ""
 echo "=== Pulling latest code ==="
 git pull origin master
 
-# ── Build everything while service is still running ──
+# ── Build backend ──
 echo ""
 echo "=== Building backend ==="
 cd "$BACKEND_DIR"
@@ -40,13 +40,13 @@ $NPX_PATH drizzle-kit migrate
 
 npm prune --omit=dev
 
+# ── Build Flutter web ──
 echo ""
-echo "=== Building frontend ==="
-cd "$FRONTEND_DIR"
-npm ci
-$NPX_PATH expo export --platform web
+echo "=== Building Flutter web ==="
+cd "$FLUTTER_DIR"
+flutter build web --release
 
-# ── Quick restart — service is down for ~1 second ──
+# ── Quick restart ──
 echo ""
 echo "=== Restarting service ==="
 
