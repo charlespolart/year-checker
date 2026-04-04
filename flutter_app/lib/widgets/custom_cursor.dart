@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/auth_provider.dart';
+import '../providers/premium_provider.dart';
 
 /// Global animated GIF cursor overlay.
-/// Captures pointer events app-wide (including over dialogs).
+/// Only active when user is authenticated and premium.
 class CustomCursorOverlay extends StatefulWidget {
   final Widget child;
 
@@ -14,13 +18,12 @@ class CustomCursorOverlay extends StatefulWidget {
   State<CustomCursorOverlay> createState() => _CustomCursorOverlayState();
 }
 
-class _CustomCursorOverlayState extends State<CustomCursorOverlay>
-    with WidgetsBindingObserver {
+class _CustomCursorOverlayState extends State<CustomCursorOverlay> {
   Offset _position = Offset.zero;
   bool _visible = false;
   Timer? _hideTimer;
 
-  static const _size = 32.0;
+  static const _size = 36.0;
 
   @override
   void initState() {
@@ -57,15 +60,19 @@ class _CustomCursorOverlayState extends State<CustomCursorOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final isAuth = context.watch<AuthProvider>().isAuthenticated;
+    final canUse = context.watch<PremiumProvider>().canUseAnimatedCursor;
+    final active = isAuth && canUse;
+
+    if (!active) return widget.child;
+
     return Stack(
       children: [
-        // Hide system cursor on the entire app
         MouseRegion(
           cursor: SystemMouseCursors.none,
           hitTestBehavior: HitTestBehavior.translucent,
           child: widget.child,
         ),
-        // Custom cursor on top of everything
         if (_visible)
           Positioned(
             left: _position.dx - _size / 2,

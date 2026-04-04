@@ -1,16 +1,23 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/page_model.dart';
 import '../providers/cells_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/legends_provider.dart';
 import '../providers/pages_provider.dart';
+import '../providers/premium_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cell_editor_dialog.dart';
+import '../widgets/export_image_builder.dart';
 import '../widgets/marquee_text.dart';
 import '../widgets/dashed_border.dart';
 import '../widgets/legend_editor_dialog.dart';
+import '../widgets/premium_gate_dialog.dart';
+import '../widgets/stats_detail_dialog.dart';
 import '../widgets/tracker_grid.dart';
 
 class TrackerScreen extends StatefulWidget {
@@ -66,6 +73,56 @@ class _TrackerScreenState extends State<TrackerScreen> {
     setState(() => _editingTitle = false);
   }
 
+  void _showDetailedStats() {
+    final premium = context.read<PremiumProvider>();
+    if (!premium.isPremium) {
+      final lang = context.read<LanguageProvider>();
+      PremiumGateDialog.show(context, feature: lang.t('premium.feature.export'));
+      return;
+    }
+    final cellsProv = context.read<CellsProvider>();
+    final legends = context.read<LegendsProvider>().legends;
+    StatsDetailDialog.show(
+      context,
+      cells: cellsProv.cells,
+      legends: legends,
+      year: _page.year,
+    );
+  }
+
+  Future<void> _exportImage() async {
+    final premium = context.read<PremiumProvider>();
+    if (!premium.isPremium) {
+      final lang = context.read<LanguageProvider>();
+      await PremiumGateDialog.show(context, feature: lang.t('premium.feature.export'));
+      return;
+    }
+
+    try {
+      final cellsProv = context.read<CellsProvider>();
+      final legends = context.read<LegendsProvider>().legends;
+
+      final image = await ExportImageBuilder.capture(
+        context: context,
+        title: _page.title,
+        year: _page.year,
+        cells: cellsProv.cells,
+        legends: legends,
+      );
+      if (image == null) return;
+
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+
+      final bytes = byteData.buffer.asUint8List();
+      await Share.shareXFiles(
+        [XFile.fromData(bytes, name: '${_page.title}.png', mimeType: 'image/png')],
+      );
+    } catch (e) {
+      debugPrint('Export failed: $e');
+    }
+  }
+
   Color _parseHex(String hex) {
     final cleaned = hex.replaceFirst('#', '');
     return Color(int.parse('FF$cleaned', radix: 16));
@@ -105,9 +162,10 @@ class _TrackerScreenState extends State<TrackerScreen> {
       child: Row(
         children: [
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: widget.onBack,
             child: Padding(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(12),
               child: Text(
                 '<',
                 style: AppFonts.pixel(
@@ -139,21 +197,29 @@ class _TrackerScreenState extends State<TrackerScreen> {
                   )
                 : GestureDetector(
                     onTap: () => setState(() => _editingTitle = true),
-                    child: Text(
-                      _page.title,
+                    child: MarqueeText(
+                      text: _page.title,
                       style: AppFonts.pixel(
                         fontSize: 16,
                         color: AppColors.title,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
           ),
-          Text(
-            '${_page.year}',
-            style: AppFonts.pixel(
-              fontSize: 13,
-              color: AppColors.textMuted,
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _showDetailedStats,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(Icons.bar_chart, size: 18, color: AppColors.accent),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _exportImage,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(Icons.ios_share, size: 18, color: AppColors.accent),
             ),
           ),
         ],
@@ -319,27 +385,26 @@ class _TrackerScreenState extends State<TrackerScreen> {
           // Left panel: back, title, year, stars
           SizedBox(
             width: 240,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8, right: 16, top: 8, bottom: 8),
-              child: Stack(
-                children: [
-                  // Back button top-left
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    child: GestureDetector(
-                      onTap: widget.onBack,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Text(
-                          '<',
-                          style: AppFonts.pixel(fontSize: 22, color: AppColors.accent),
-                        ),
+            child: Column(
+              children: [
+                // Back button top-left
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.onBack,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        '<',
+                        style: AppFonts.pixel(fontSize: 20, color: AppColors.accent),
                       ),
                     ),
                   ),
-                  // Centered content
-                  Center(
+                ),
+                // Centered content
+                Expanded(
+                  child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -381,11 +446,34 @@ class _TrackerScreenState extends State<TrackerScreen> {
                             child: Icon(Icons.star_border, size: 26, color: AppColors.star),
                           )),
                         ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _showDetailedStats,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Icon(Icons.bar_chart, size: 20, color: AppColors.accent),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _exportImage,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Icon(Icons.ios_share, size: 20, color: AppColors.accent),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           // Grid shell — sized to fit
@@ -453,6 +541,23 @@ class _TrackerScreenState extends State<TrackerScreen> {
               ),
             ),
 
+            // Year
+            if (showLabels)
+              Text(
+                '~ ${_page.year} ~',
+                style: AppFonts.dot(fontSize: 12, color: AppColors.subtitle),
+                textAlign: TextAlign.center,
+              )
+            else
+              RotatedBox(
+                quarterTurns: 3,
+                child: Text(
+                  '${_page.year}',
+                  style: AppFonts.pixel(fontSize: 9, color: AppColors.subtitle),
+                ),
+              ),
+            const SizedBox(height: 4),
+
             // Legend section title
             _buildSectionHeader(lang.t('tracker.legend'), showLabels, sectionFs),
 
@@ -462,6 +567,28 @@ class _TrackerScreenState extends State<TrackerScreen> {
                 child: Column(
                   crossAxisAlignment: showLabels ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                   children: [
+                    // Empty state hint
+                    if (legends.isEmpty && showLabels)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          lang.t('tracker.addLegendsHint'),
+                          style: AppFonts.dot(
+                            fontSize: labelFs,
+                            color: AppColors.textMuted,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    if (legends.isEmpty && !showLabels)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Icon(
+                          Icons.arrow_downward,
+                          size: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                     ...legends.map<Widget>((legend) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 5),
@@ -502,11 +629,13 @@ class _TrackerScreenState extends State<TrackerScreen> {
                     }),
                     // Edit button right after legends
                     const SizedBox(height: 4),
-                    Center(child: GestureDetector(
-                      onTap: () {
-                        LegendEditorDialog.show(context, pageId: _page.id);
-                      },
-                      child: DashedBorder(
+                    Center(child: _MaybePulse(
+                      pulse: legends.isEmpty,
+                      child: GestureDetector(
+                        onTap: () {
+                          LegendEditorDialog.show(context, pageId: _page.id);
+                        },
+                        child: DashedBorder(
                         color: AppColors.inputBorder,
                         borderRadius: 4,
                         dashLength: 3,
@@ -540,7 +669,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
                                 color: AppColors.accent,
                               ),
                       ),
-                    )),
+                    ))),
                   ],
                 ),
               ),
@@ -680,6 +809,64 @@ class _TrackerScreenState extends State<TrackerScreen> {
 
   bool _isLeapYear(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+  }
+}
+
+/// Pulses its child with a subtle opacity animation when [pulse] is true.
+class _MaybePulse extends StatefulWidget {
+  final bool pulse;
+  final Widget child;
+
+  const _MaybePulse({required this.pulse, required this.child});
+
+  @override
+  State<_MaybePulse> createState() => _MaybePulseState();
+}
+
+class _MaybePulseState extends State<_MaybePulse>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    if (widget.pulse) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MaybePulse old) {
+    super.didUpdateWidget(old);
+    if (widget.pulse && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.pulse && _controller.isAnimating) {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.pulse) return widget.child;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.4 + 0.6 * (1 - _controller.value),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
   }
 }
 

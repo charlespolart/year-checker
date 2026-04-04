@@ -6,11 +6,14 @@ import 'providers/cells_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/legends_provider.dart';
 import 'providers/pages_provider.dart';
+import 'providers/premium_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/page_list_screen.dart';
 import 'screens/tracker_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/custom_cursor.dart';
@@ -20,7 +23,7 @@ import 'widgets/undo_delete_bar.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: AppColors.bg,
     statusBarIconBrightness: Brightness.dark,
     statusBarBrightness: Brightness.light,
@@ -40,23 +43,27 @@ class DianDianApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PagesProvider()),
         ChangeNotifierProvider(create: (_) => CellsProvider()),
         ChangeNotifierProvider(create: (_) => LegendsProvider()),
+        ChangeNotifierProvider(create: (_) => PremiumProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Dian Dian',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.themeData.copyWith(
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-              TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-              TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
-              TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
-            },
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProv, _) => MaterialApp(
+          title: 'Dian Dian',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.themeDataFor(themeProv.currentTheme).copyWith(
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+                TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
+                TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+              },
+            ),
           ),
+          builder: (context, child) => CustomCursorOverlay(child: child!),
+          home: const AppShell(),
         ),
-        builder: (context, child) => CustomCursorOverlay(child: child!),
-        home: const AppShell(),
       ),
     );
   }
@@ -72,7 +79,7 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-enum AppScreen { login, register, forgotPassword, pageList, tracker, settings }
+enum AppScreen { login, register, forgotPassword, onboarding, pageList, tracker, settings }
 
 class _AppShellState extends State<AppShell> {
   AppScreen _screen = AppScreen.login;
@@ -87,8 +94,18 @@ class _AppShellState extends State<AppShell> {
     auth.addListener(_onAuthChange);
   }
 
-  void _onAuthChange() {
+  void _onAuthChange() async {
     final auth = context.read<AuthProvider>();
+    // Show onboarding after first login
+    if (auth.isAuthenticated && _screen != AppScreen.onboarding &&
+        _screen != AppScreen.pageList && _screen != AppScreen.tracker &&
+        _screen != AppScreen.settings) {
+      final shouldShow = await OnboardingScreen.shouldShow();
+      if (shouldShow && mounted) {
+        setState(() => _screen = AppScreen.onboarding);
+        return;
+      }
+    }
     if (!auth.isAuthenticated && _screen != AppScreen.login &&
         _screen != AppScreen.register && _screen != AppScreen.forgotPassword) {
       // Cancel any pending page deletion on logout
@@ -182,6 +199,11 @@ class _AppShellState extends State<AppShell> {
 
   Widget _buildAppScreen() {
     switch (_screen) {
+      case AppScreen.onboarding:
+        return OnboardingScreen(
+          key: const ValueKey('onboarding'),
+          onDone: () => _navigate(AppScreen.pageList),
+        );
       case AppScreen.settings:
         return SettingsScreen(
           key: const ValueKey('settings'),
@@ -230,7 +252,7 @@ class _LoadingScreen extends StatelessWidget {
               style: AppFonts.pixel(fontSize: 14, color: AppColors.subtitle),
             ),
             const SizedBox(height: 24),
-            const SizedBox(
+            SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(

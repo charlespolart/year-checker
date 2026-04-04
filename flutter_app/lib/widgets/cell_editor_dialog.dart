@@ -7,6 +7,7 @@ import '../providers/language_provider.dart';
 import '../providers/legends_provider.dart';
 import '../theme/app_theme.dart';
 import 'app_dialog.dart';
+import 'legend_editor_dialog.dart';
 
 class CellEditorDialog extends StatefulWidget {
   final int month;
@@ -26,6 +27,50 @@ class CellEditorDialog extends StatefulWidget {
     required int day,
     required int year,
   }) {
+    final legends = context.read<LegendsProvider>().legends;
+    if (legends.isEmpty) {
+      final lang = context.read<LanguageProvider>();
+      final pageId = context.read<CellsProvider>().currentPageId;
+      return showDialog(
+        context: context,
+        builder: (ctx) => AppDialog(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  lang.t('tracker.addLegendsHint'),
+                  style: AppFonts.dot(fontSize: 14, color: AppColors.text),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    if (pageId != null) {
+                      LegendEditorDialog.show(context, pageId: pageId);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.btnAdd,
+                      border: Border.all(color: AppColors.btnAddBorder),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      lang.t('tracker.editLegends'),
+                      style: AppFonts.pixel(fontSize: 12, color: AppColors.btnAddText),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return showDialog(
       context: context,
       builder: (_) => CellEditorDialog(month: month, day: day, year: year),
@@ -273,13 +318,7 @@ class _CellEditorDialogState extends State<CellEditorDialog> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Legend selection
-        if (legends.isEmpty)
-          Text(
-            lang.t('tracker.noLegends'),
-            style: AppFonts.dot(fontSize: 13, color: AppColors.textMuted),
-          )
-        else
-          ConstrainedBox(
+        ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 200),
             child: SingleChildScrollView(
               child: Column(
@@ -364,7 +403,7 @@ class _CellEditorDialogState extends State<CellEditorDialog> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'OK',
+                  lang.t('common.ok'),
                   style: AppFonts.pixel(
                     fontSize: 12,
                     color: _selectedColor != null
