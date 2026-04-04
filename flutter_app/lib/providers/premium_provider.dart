@@ -10,11 +10,12 @@ class PremiumProvider extends ChangeNotifier {
   static const maxFreeTrackers = 3;
 
   bool _isPremium = false;
+  bool _isVip = false;
   bool _cursorEnabled = false;
   String _cursorId = 'cat';
   final PurchaseService _purchaseService = PurchaseService();
 
-  bool get isPremium => _isPremium;
+  bool get isPremium => _isPremium || _isVip;
   int get maxTrackers => _isPremium ? 999 : maxFreeTrackers;
   bool get canUseCustomThemes => _isPremium;
   bool get canUseAnimatedCursor => _isPremium && _cursorEnabled;
@@ -62,6 +63,12 @@ class PremiumProvider extends ChangeNotifier {
   /// Restore previous purchases.
   Future<void> restorePurchases() async {
     await _purchaseService.restorePurchases();
+  }
+
+  /// Set VIP status (from AuthProvider).
+  void setVip(bool value) {
+    _isVip = value;
+    notifyListeners();
   }
 
   /// Toggle animated cursor on/off.

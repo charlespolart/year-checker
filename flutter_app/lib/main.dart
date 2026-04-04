@@ -96,6 +96,9 @@ class _AppShellState extends State<AppShell> {
 
   void _onAuthChange() async {
     final auth = context.read<AuthProvider>();
+    // Sync VIP → Premium
+    context.read<PremiumProvider>().setVip(auth.isVip);
+
     // Show onboarding after first login
     if (auth.isAuthenticated && _screen != AppScreen.onboarding &&
         _screen != AppScreen.pageList && _screen != AppScreen.tracker &&
