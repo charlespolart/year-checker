@@ -231,7 +231,7 @@ class _LegendEditorDialogState extends State<LegendEditorDialog> {
                       child: Text(
                         lang.t('common.add'),
                         style: AppFonts.pixel(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.btnAddText,
                         ),
                       ),
@@ -613,8 +613,8 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
                   child: Text(
-                    'Cancel',
-                    style: AppFonts.pixel(fontSize: 11, color: AppColors.textMuted),
+                    context.read<LanguageProvider>().t('common.cancel'),
+                    style: AppFonts.pixel(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ),
                 GestureDetector(
@@ -630,8 +630,8 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'OK',
-                      style: AppFonts.pixel(fontSize: 11, color: AppColors.btnAddText),
+                      context.read<LanguageProvider>().t('common.ok'),
+                      style: AppFonts.pixel(fontSize: 12, color: AppColors.btnAddText),
                     ),
                   ),
                 ),

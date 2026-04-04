@@ -9,8 +9,12 @@ import '../providers/cells_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/legends_provider.dart';
 import '../providers/pages_provider.dart';
+import '../providers/premium_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/global_stats_dialog.dart';
+import '../widgets/premium_gate_dialog.dart';
 import '../widgets/marquee_text.dart';
 
 class PageListScreen extends StatefulWidget {
@@ -70,9 +74,86 @@ class _PageListScreenState extends State<PageListScreen> {
   }
 
   Future<void> _createPage() async {
+    // Check tracker limit for free users
+    final premium = context.read<PremiumProvider>();
+    if (!premium.isPremium) {
+      final totalPages = context.read<PagesProvider>().pages.length;
+      if (totalPages >= PremiumProvider.maxFreeTrackers) {
+        final lang = context.read<LanguageProvider>();
+        await PremiumGateDialog.show(context, feature: lang.t('premium.trackerLimit'));
+        return;
+      }
+    }
+
+    final lang = context.read<LanguageProvider>();
+    final controller = TextEditingController();
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AppDialog(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                lang.t('tracker.newTracker'),
+                style: AppFonts.pixel(fontSize: 16, color: AppColors.title),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLength: 35,
+                style: AppFonts.dot(fontSize: 14, color: AppColors.inputText),
+                decoration: InputDecoration(
+                  hintText: lang.t('tracker.titleHint'),
+                  counterText: '',
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10,
+                  ),
+                  isDense: true,
+                ),
+                onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(),
+                    child: Text(
+                      lang.t('common.cancel'),
+                      style: AppFonts.pixel(fontSize: 12, color: AppColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(controller.text.trim()),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.btnAdd,
+                        border: Border.all(color: AppColors.btnAddBorder),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        lang.t('common.create'),
+                        style: AppFonts.pixel(fontSize: 12, color: AppColors.btnAddText),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (title == null || title.isEmpty || !mounted) return;
+
     final prov = context.read<PagesProvider>();
-    await prov.createPage('Untitled', year: _selectedYear);
-    // Navigate to the newly created page
+    await prov.createPage(title, year: _selectedYear);
     final pages = _pagesForYear(prov.pages);
     if (pages.isNotEmpty && mounted) {
       final newest = pages.last;
@@ -118,7 +199,7 @@ class _PageListScreenState extends State<PageListScreen> {
         children: [
           // Header banner (covers safe area top)
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.shell,
               border: Border(
                 bottom: BorderSide(color: AppColors.shellBorder, width: 0.5),
@@ -195,6 +276,14 @@ class _PageListScreenState extends State<PageListScreen> {
                       ],
                     ),
                   ),
+                  // Global stats button
+                  GestureDetector(
+                    onTap: () => GlobalStatsDialog.show(context),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(Icons.bar_chart, size: 24, color: AppColors.accent),
+                    ),
+                  ),
                   // Settings button
                   GestureDetector(
                     onTap: widget.onOpenSettings,
@@ -205,7 +294,7 @@ class _PageListScreenState extends State<PageListScreen> {
                         width: 24,
                         height: 24,
                         colorFilter: ColorFilter.mode(
-                          AppColors.bgDot,
+                          AppColors.accent,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -296,7 +385,7 @@ class _PageListScreenState extends State<PageListScreen> {
                                             ),
                                             childWhenDragging: const SizedBox(width: 18, height: 10),
                                             child: Padding(
-                                              padding: const EdgeInsets.all(2),
+                                              padding: const EdgeInsets.all(8),
                                               child: Text(
                                                 '≡',
                                                 style: TextStyle(
@@ -348,13 +437,13 @@ class _PageListScreenState extends State<PageListScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.bg,
-            border: Border.all(color: AppColors.bgDot, width: 1.5),
+            border: Border.all(color: AppColors.accent, width: 1.5),
           ),
           child: Center(
             child: Icon(
               Icons.add_rounded,
               size: 26,
-              color: AppColors.bgDot,
+              color: AppColors.accent,
             ),
           ),
         ),
@@ -390,19 +479,19 @@ class _PageCard extends StatelessWidget {
       child: GestureDetector(
         onTap: isDragGhost ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: AppColors.shell,
           border: Border.all(color: AppColors.shellBorder),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Stack(
-          clipBehavior: Clip.none,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 14),
                 // Title
                 MarqueeText(
                   text: page.title,
@@ -447,28 +536,26 @@ class _PageCard extends StatelessWidget {
                 child: _MiniGrid(cells: cells, year: page.year),
               ),
             ),
-            ],
+              ],
+            ),
           ),
           // Drag handle top-left
           if (dragHandle != null)
             Positioned(
-              top: -8,
-              left: -8,
+              top: 0,
+              left: 0,
               child: dragHandle!,
             ),
           // Delete button top-right
           if (!isDragGhost)
             Positioned(
-              top: -6,
-              right: -6,
+              top: 0,
+              right: 0,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: onDelete,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.shell,
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.close,
                     size: 12,

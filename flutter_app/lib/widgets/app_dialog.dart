@@ -19,7 +19,7 @@ class AppDialog extends StatelessWidget {
       backgroundColor: AppColors.shell,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.shellBorder),
+        side: BorderSide(color: AppColors.shellBorder),
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: ConstrainedBox(

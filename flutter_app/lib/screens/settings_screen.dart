@@ -4,10 +4,16 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
+import '../providers/premium_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/confirm_dialog.dart';
+import '../providers/theme_provider.dart';
+import '../widgets/language_picker_dialog.dart';
+import '../widgets/premium_gate_dialog.dart';
+import '../widgets/theme_picker_dialog.dart';
+import '../widgets/top_bar.dart';
 
 class SettingsScreen extends StatelessWidget {
   final VoidCallback onBack;
@@ -33,40 +39,16 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>();
+    context.watch<ThemeProvider>(); // rebuild when theme changes
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: onBack,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Text(
-                        '<',
-                        style: AppFonts.pixel(
-                          fontSize: 20,
-                          color: AppColors.accent,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    lang.t('settings.title'),
-                    style: AppFonts.pixel(
-                      fontSize: 18,
-                      color: AppColors.title,
-                    ),
-                  ),
-                ],
-              ),
+            TopBar(
+              onBack: onBack,
+              title: lang.t('settings.title'),
             ),
 
             Expanded(
@@ -84,6 +66,26 @@ class SettingsScreen extends StatelessWidget {
                     _buildSectionTitle(lang.t('settings.language')),
                     const SizedBox(height: 8),
                     _buildLanguageSelector(context, lang),
+
+                    const SizedBox(height: 24),
+
+                    // Premium section
+                    _buildSectionTitle(lang.t('settings.premium')),
+                    const SizedBox(height: 8),
+                    _buildPremiumTile(context, lang),
+
+                    const SizedBox(height: 24),
+
+                    // Theme section
+                    _buildSectionTitle(lang.t('settings.theme')),
+                    const SizedBox(height: 8),
+                    Builder(builder: (context) {
+                      final themeProv = context.watch<ThemeProvider>();
+                      return _buildLinkTile(
+                        label: appThemeNames[themeProv.currentTheme]!,
+                        onTap: () => showThemePickerDialog(context),
+                      );
+                    }),
 
                     const SizedBox(height: 24),
 
@@ -123,8 +125,6 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 32),
 
                     // Account section
-                    _buildSectionTitle(lang.t('settings.account')),
-                    const SizedBox(height: 12),
 
                     // Logout
                     _buildActionButton(
@@ -167,58 +167,24 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildPremiumTile(BuildContext context, LanguageProvider lang) {
+    final premium = context.watch<PremiumProvider>();
+    return _buildLinkTile(
+      label: premium.isPremium ? lang.t('premium.active') : lang.t('premium.free'),
+      onTap: () {
+        if (premium.isPremium) return;
+        PremiumGateDialog.show(context, feature: lang.t('premium.upgrade'));
+      },
+    );
+  }
+
   Widget _buildLanguageSelector(
     BuildContext context,
     LanguageProvider lang,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.shell,
-        border: Border.all(color: AppColors.shellBorder),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: Language.values.map((language) {
-          return _buildLanguageOption(
-            context,
-            lang: lang,
-            language: language,
-            label: lang.t(languageNameKeys[language]!),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(
-    BuildContext context, {
-    required LanguageProvider lang,
-    required Language language,
-    required String label,
-  }) {
-    final isActive = lang.lang == language;
-    return GestureDetector(
-      onTap: () => lang.setLang(language),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        margin: const EdgeInsets.only(bottom: 4),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.tabActive : Colors.transparent,
-          border: isActive
-              ? Border.all(color: AppColors.tabActiveBorder)
-              : null,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: AppFonts.dot(
-            fontSize: 14,
-            color: isActive ? AppColors.accent : AppColors.text,
-          ),
-        ),
-      ),
+    return _buildLinkTile(
+      label: lang.t(languageNameKeys[lang.lang]!),
+      onTap: () => showLanguagePickerDialog(context, lang),
     );
   }
 

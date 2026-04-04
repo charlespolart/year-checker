@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../providers/language_provider.dart';
 import '../theme/app_theme.dart';
+import 'language_picker_dialog.dart';
 
-/// Compact language dropdown used on auth screens.
+/// Compact language button used on auth screens.
+/// Taps opens the shared language picker dialog.
 class LanguageDropdown extends StatelessWidget {
   final LanguageProvider lang;
 
@@ -11,14 +13,8 @@ class LanguageDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<Language>(
-      onSelected: (l) => lang.setLang(l),
-      offset: const Offset(0, 36),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: AppColors.shellBorder),
-      ),
-      color: AppColors.shell,
+    return GestureDetector(
+      onTap: () => showLanguagePickerDialog(context, lang),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -38,19 +34,6 @@ class LanguageDropdown extends StatelessWidget {
           ],
         ),
       ),
-      itemBuilder: (_) => Language.values.map((l) {
-        final isActive = lang.lang == l;
-        return PopupMenuItem<Language>(
-          value: l,
-          child: Text(
-            languageShortLabels[l]!,
-            style: AppFonts.pixel(
-              fontSize: 11,
-              color: isActive ? AppColors.accent : AppColors.text,
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }
