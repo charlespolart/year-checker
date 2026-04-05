@@ -16,10 +16,14 @@ class AuthProvider extends ChangeNotifier {
   String? _email;
   bool _isVip = false;
 
+  // Server-synced settings (populated on login / restore)
+  Map<String, dynamic>? _serverSettings;
+
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
   String? get email => _email;
   bool get isVip => _isVip;
+  Map<String, dynamic>? get serverSettings => _serverSettings;
 
   AuthProvider() {
     _api.onAuthExpired = _onAuthExpired;
@@ -34,6 +38,12 @@ class AuthProvider extends ChangeNotifier {
     final data = await _api.login(email, password);
     _email = email;
     _isVip = data['vip'] == true;
+    _serverSettings = {
+      'theme': data['theme'],
+      'language': data['language'],
+      'cursorId': data['cursorId'],
+      'cursorEnabled': data['cursorEnabled'],
+    };
     await _storage.setEmail(email);
     _isAuthenticated = true;
     _ws.connect();
@@ -72,12 +82,18 @@ class AuthProvider extends ChangeNotifier {
       if (restored) {
         _email = await _storage.getEmail();
         _ws.connect();
-        // Fetch vip status
+        // Fetch vip status + settings
         try {
           final response = await _api.apiFetch('/api/auth/me');
           if (response.statusCode == 200) {
             final data = jsonDecode(response.body) as Map<String, dynamic>;
             _isVip = data['vip'] == true;
+            _serverSettings = {
+              'theme': data['theme'],
+              'language': data['language'],
+              'cursorId': data['cursorId'],
+              'cursorEnabled': data['cursorEnabled'],
+            };
           }
         } catch (_) {}
       }

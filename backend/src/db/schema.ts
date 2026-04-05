@@ -6,6 +6,10 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   emailVerified: boolean('email_verified').notNull().default(false),
   vip: boolean('vip').notNull().default(false),
+  theme: text('theme').notNull().default('defaultTheme'),
+  language: text('language'),
+  cursorId: text('cursor_id').notNull().default('cat'),
+  cursorEnabled: boolean('cursor_enabled').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

@@ -43,6 +43,13 @@
       "when": 1775328210542,
       "tag": "0005_mute_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775388075661,
+      "tag": "0006_normal_lizard",
+      "breakpoints": true
     }
   ]
 }

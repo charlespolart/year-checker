@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/api_service.dart';
+
 enum Language { fr, en, zhCN, zhTW }
 
 /// Short labels for each language (used in compact selectors).
@@ -34,12 +36,25 @@ class LanguageProvider extends ChangeNotifier {
   // Public API
   // ---------------------------------------------------------------------------
 
+  /// Apply settings from server (called after login / session restore).
+  void applyServerSettings(String? language) {
+    if (language == null) return;
+    final newLang = _languageFromName(language);
+    if (newLang != _lang) {
+      _lang = newLang;
+      SharedPreferences.getInstance().then((p) => p.setString(_prefKey, newLang.name));
+      notifyListeners();
+    }
+  }
+
   Future<void> setLang(Language lang) async {
     _lang = lang;
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, lang.name);
+    // Sync to server (fire-and-forget)
+    ApiService().apiFetch('/api/auth/settings', method: 'PATCH', body: {'language': lang.name}).ignore();
   }
 
   /// Returns the translated string for the given [key].

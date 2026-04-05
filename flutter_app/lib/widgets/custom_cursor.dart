@@ -58,12 +58,22 @@ class _CustomCursorOverlayState extends State<CustomCursorOverlay> {
 
       _hideTimer?.cancel();
       if (event.kind == PointerDeviceKind.touch) {
-        _hideTimer = Timer(const Duration(milliseconds: 800), () {
+        _hideTimer = Timer(const Duration(milliseconds: 1500), () {
           if (mounted) setState(() => _visible = false);
         });
       }
+    } else if (event is PointerUpEvent &&
+        event.kind == PointerDeviceKind.touch) {
+      // Finger lifted: keep cursor visible, restart hide timer
+      _hideTimer?.cancel();
+      _hideTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (mounted) setState(() => _visible = false);
+      });
     } else if (event is PointerRemovedEvent) {
-      setState(() => _visible = false);
+      // Mouse: hide immediately. Touch: let the timer handle it.
+      if (event.kind != PointerDeviceKind.touch) {
+        setState(() => _visible = false);
+      }
     }
   }
 

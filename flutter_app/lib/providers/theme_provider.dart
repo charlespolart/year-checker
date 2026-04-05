@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
 class ThemeProvider extends ChangeNotifier {
@@ -27,11 +28,28 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Apply settings from server (called after login / session restore).
+  void applyServerSettings(String? theme) {
+    if (theme == null) return;
+    final type = AppThemeType.values.firstWhere(
+      (t) => t.name == theme,
+      orElse: () => AppThemeType.defaultTheme,
+    );
+    if (type != _currentTheme) {
+      _currentTheme = type;
+      AppColors.setTheme(type);
+      SharedPreferences.getInstance().then((p) => p.setString(_prefKey, type.name));
+      notifyListeners();
+    }
+  }
+
   Future<void> setTheme(AppThemeType type) async {
     _currentTheme = type;
     AppColors.setTheme(type);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, type.name);
     notifyListeners();
+    // Sync to server (fire-and-forget)
+    ApiService().apiFetch('/api/auth/settings', method: 'PATCH', body: {'theme': type.name}).ignore();
   }
 }

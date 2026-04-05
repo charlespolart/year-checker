@@ -102,7 +102,11 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       path: '/api/auth',
     });
 
-    res.json({ accessToken, refreshToken, userId: user.id, vip: user.vip });
+    res.json({
+      accessToken, refreshToken, userId: user.id, vip: user.vip,
+      theme: user.theme, language: user.language,
+      cursorId: user.cursorId, cursorEnabled: user.cursorEnabled,
+    });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -233,10 +237,18 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-// Get current user info (vip status, etc.)
+// Get current user info (vip status, settings, etc.)
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const [user] = await db.select({ id: users.id, email: users.email, vip: users.vip })
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      vip: users.vip,
+      theme: users.theme,
+      language: users.language,
+      cursorId: users.cursorId,
+      cursorEnabled: users.cursorEnabled,
+    })
       .from(users)
       .where(eq(users.id, req.userId!))
       .limit(1);
@@ -244,6 +256,35 @@ router.get('/me', requireAuth, async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error('Get me error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update user settings
+const settingsSchema = z.object({
+  theme: z.string().max(50).optional(),
+  language: z.string().max(10).nullable().optional(),
+  cursorId: z.string().max(50).optional(),
+  cursorEnabled: z.boolean().optional(),
+}).strict();
+
+router.patch('/settings', requireAuth, validate(settingsSchema), async (req, res) => {
+  try {
+    const updates: Record<string, unknown> = {};
+    if (req.body.theme !== undefined) updates.theme = req.body.theme;
+    if (req.body.language !== undefined) updates.language = req.body.language;
+    if (req.body.cursorId !== undefined) updates.cursorId = req.body.cursorId;
+    if (req.body.cursorEnabled !== undefined) updates.cursorEnabled = req.body.cursorEnabled;
+
+    if (Object.keys(updates).length === 0) {
+      res.json({ ok: true });
+      return;
+    }
+
+    await db.update(users).set(updates).where(eq(users.id, req.userId!));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Update settings error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

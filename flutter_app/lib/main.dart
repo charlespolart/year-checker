@@ -99,6 +99,17 @@ class _AppShellState extends State<AppShell> {
     // Sync VIP → Premium
     context.read<PremiumProvider>().setVip(auth.isVip);
 
+    // Apply server settings to providers
+    final settings = auth.serverSettings;
+    if (auth.isAuthenticated && settings != null) {
+      context.read<ThemeProvider>().applyServerSettings(settings['theme'] as String?);
+      context.read<LanguageProvider>().applyServerSettings(settings['language'] as String?);
+      context.read<PremiumProvider>().applyServerSettings(
+        cursorId: settings['cursorId'] as String?,
+        cursorEnabled: settings['cursorEnabled'] as bool?,
+      );
+    }
+
     // Show onboarding after first login
     if (auth.isAuthenticated && _screen != AppScreen.onboarding &&
         _screen != AppScreen.pageList && _screen != AppScreen.tracker &&
