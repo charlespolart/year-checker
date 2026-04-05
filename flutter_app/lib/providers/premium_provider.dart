@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/api_service.dart';
 import '../services/purchase_service.dart';
 
 class PremiumProvider extends ChangeNotifier {
@@ -71,12 +72,34 @@ class PremiumProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Apply settings from server (called after login / session restore).
+  void applyServerSettings({String? cursorId, bool? cursorEnabled}) {
+    bool changed = false;
+    if (cursorId != null && cursorId != _cursorId) {
+      _cursorId = cursorId;
+      changed = true;
+    }
+    if (cursorEnabled != null && cursorEnabled != _cursorEnabled) {
+      _cursorEnabled = cursorEnabled;
+      changed = true;
+    }
+    if (changed) {
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setBool(_cursorEnabledKey, _cursorEnabled);
+        prefs.setString(_cursorIdKey, _cursorId);
+      });
+      notifyListeners();
+    }
+  }
+
   /// Toggle animated cursor on/off.
   Future<void> setCursorEnabled(bool value) async {
     _cursorEnabled = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_cursorEnabledKey, value);
     notifyListeners();
+    // Sync to server (fire-and-forget)
+    ApiService().apiFetch('/api/auth/settings', method: 'PATCH', body: {'cursorEnabled': value}).ignore();
   }
 
   /// Set which cursor to use (for future multiple cursors).
@@ -85,6 +108,8 @@ class PremiumProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_cursorIdKey, id);
     notifyListeners();
+    // Sync to server (fire-and-forget)
+    ApiService().apiFetch('/api/auth/settings', method: 'PATCH', body: {'cursorId': id}).ignore();
   }
 
   /// Set premium status (also used for testing).
