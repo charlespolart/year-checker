@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,6 +66,19 @@ class PremiumProvider extends ChangeNotifier {
   /// Restore previous purchases.
   Future<void> restorePurchases() async {
     await _purchaseService.restorePurchases();
+  }
+
+  /// Check subscription status from server.
+  Future<void> checkServerSubscription() async {
+    try {
+      final response = await ApiService().apiFetch('/api/purchase/status');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['premium'] == true && !_isPremium) {
+          await setPremium(true);
+        }
+      }
+    } catch (_) {}
   }
 
   /// Set VIP status (from AuthProvider).
